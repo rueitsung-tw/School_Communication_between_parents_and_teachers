@@ -128,34 +128,86 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
     return [c for c in chunks if len(c.strip()) >= 20]
 
 
-# ── Embedding（呼叫遠端 Ollama） ───────────────────────────────────────────────
+# ── Embedding（支援 Ollama 與 llama-server / OpenAI 相容介面） ───────────────
 
-def get_embedding(text: str, ollama_base_url: str, model: str = EMBED_MODEL) -> Optional[List[float]]:
-    base = ollama_base_url.strip().rstrip("/")
-    if base.endswith("/v1"):
-        base = base[:-3].rstrip("/")
-    url = f"{base}/api/embed"
-    payload = json.dumps({"model": model, "input": text}).encode("utf-8")
-    req = urllib.request.Request(
-        url, data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
+def get_embedding(text: str, base_url: str, model: str = EMBED_MODEL, api_key: str = "ollama") -> Optional[List[float]]:
+    clean_url = base_url.strip().rstrip("/")
+    if clean_url.endswith("/v1"):
+        base_v1 = clean_url
+        base_root = clean_url[:-3].rstrip("/")
+    else:
+        base_v1 = f"{clean_url}/v1"
+        base_root = clean_url
+
+    headers = {"Content-Type": "application/json"}
+    if api_key and api_key != "ollama":
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    # 1. 嘗試 OpenAI 相容 /v1/embeddings (llama-server --embedding 預設介面)
     try:
+        url = f"{base_v1}/embeddings"
+        payload = json.dumps({"model": model, "input": text}).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
         with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            embeddings = data.get("embeddings", [])
-            if embeddings:
-                return embeddings[0]
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                if "data" in data and len(data["data"]) > 0:
+                    emb = data["data"][0].get("embedding")
+                    if emb:
+                        return emb
+    except Exception:
+        pass
+
+    # 2. 嘗試 llama.cpp 原生 /embeddings
+    try:
+        url = f"{base_root}/embeddings"
+        payload = json.dumps({"content": text, "input": text}).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                if isinstance(data, dict) and "embedding" in data:
+                    return data["embedding"]
+                elif isinstance(data, list) and len(data) > 0 and "embedding" in data[0]:
+                    return data[0]["embedding"]
+    except Exception:
+        pass
+
+    # 3. 嘗試 Ollama /api/embed
+    try:
+        url = f"{base_root}/api/embed"
+        payload = json.dumps({"model": model, "input": text}).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                embeddings = data.get("embeddings", [])
+                if embeddings:
+                    return embeddings[0]
+    except Exception:
+        pass
+
+    # 4. 嘗試 Ollama 舊版 /api/embeddings
+    try:
+        url = f"{base_root}/api/embeddings"
+        payload = json.dumps({"model": model, "prompt": text}).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                emb = data.get("embedding", [])
+                if emb:
+                    return emb
     except Exception as e:
         print(f"[RAG] ⚠️ Embedding 呼叫失敗: {e}")
+
     return None
 
 
-def batch_get_embeddings(texts: List[str], ollama_base_url: str, model: str = EMBED_MODEL) -> List[Optional[List[float]]]:
+def batch_get_embeddings(texts: List[str], base_url: str, model: str = EMBED_MODEL, api_key: str = "ollama") -> List[Optional[List[float]]]:
     results = []
     for i, text in enumerate(texts):
-        vec = get_embedding(text, ollama_base_url, model)
+        vec = get_embedding(text, base_url, model, api_key)
         results.append(vec)
         if (i + 1) % 10 == 0:
             print(f"[RAG] Embedding 進度：{i + 1}/{len(texts)}")
@@ -231,9 +283,13 @@ class RAGEngine:
         db_path: str = DB_PATH,
         two_step_ingest: bool = True,
         ingest_model: str = "",
-        api_key: str = "ollama"
+        api_key: str = "ollama",
+        embedding_url: str = "",
+        embedding_model: str = ""
     ):
         self.ollama_base_url = ollama_base_url
+        self.embedding_url = embedding_url if embedding_url else ollama_base_url
+        self.embedding_model = embedding_model if embedding_model else EMBED_MODEL
         self.docs_dir = normalize_path(docs_dir)
         self.db_path = normalize_path(db_path)
         self.two_step_ingest = two_step_ingest
@@ -454,10 +510,10 @@ class RAGEngine:
         if not chunks:
             return False
 
-        embeddings = batch_get_embeddings(chunks, self.ollama_base_url)
+        embeddings = batch_get_embeddings(chunks, self.embedding_url, self.embedding_model, self.api_key)
         valid = [(c, e) for c, e in zip(chunks, embeddings) if e is not None]
         if not valid:
-            print("[RAG] ❌ 無法取得 embedding，請確認 nomic-embed-text 已安裝")
+            print("[RAG] ❌ 無法取得 embedding，請確認 Embedding 伺服器與模型設定正確")
             return False
 
         is_summary = (material_path != source_fpath)
@@ -500,7 +556,7 @@ class RAGEngine:
         """
         if self._collection is None:
             return []
-        query_vec = get_embedding(query, self.ollama_base_url)
+        query_vec = get_embedding(query, self.embedding_url, self.embedding_model, self.api_key)
         if query_vec is None:
             return []
         count = self._collection.count()

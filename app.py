@@ -50,6 +50,8 @@ model_name  = cfg.get("model_name", "gemma3:12b")
 two_step_ingest = cfg.get("two_step_ingest", True)
 ingest_model    = cfg.get("ingest_model", "")
 admin_password  = str(cfg.get("admin_password", "12345678"))
+embedding_url   = cfg.get("embedding_url", base_url)
+embedding_model = cfg.get("embedding_model", "nomic-embed-text")
 
 # ── RAG 引擎初始化（使用 st.session_state 確保單例） ──────────────────────────
 if "rag_engine" not in st.session_state:
@@ -58,7 +60,9 @@ if "rag_engine" not in st.session_state:
         docs_dir=DOCS_DIR,
         two_step_ingest=two_step_ingest,
         ingest_model=ingest_model,
-        api_key=current_key
+        api_key=current_key,
+        embedding_url=embedding_url,
+        embedding_model=embedding_model
     )
     ok = engine.initialize()
     if ok:
