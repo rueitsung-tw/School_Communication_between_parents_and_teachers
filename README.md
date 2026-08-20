@@ -75,7 +75,24 @@ ollama list
 
 ### 1. 安裝 Python 套件
 
+建議使用 Python 虛擬環境（Virtual Environment）進行套件安裝，可避免全域環境衝突與 PEP 668（`externally-managed-environment`）錯誤：
+
 ```bash
+# (若在 Debian/Ubuntu 系統且尚未安裝 venv，請先執行)
+# sudo apt update && sudo apt install python3-venv python3-full
+
+# 1. 建立虛擬環境
+python3 -m venv .venv
+
+# 2. 啟用虛擬環境
+# Linux / macOS:
+source .venv/bin/activate
+# Windows (Git Bash):
+source .venv/Scripts/activate
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+# 3. 安裝專案套件
 pip install -r requirements.txt
 ```
 
