@@ -18,6 +18,9 @@ ENV/
 # ChromaDB 向量資料庫（本地索引，不納入版控）
 .chromadb/
 
+# LLM 自動生成的摘要（各環境自行重建）
+docs/summaries/
+
 # Streamlit 快取
 .streamlit/
 

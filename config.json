@@ -2,5 +2,7 @@
   "provider": "ollama",
   "ollama_url": "http://172.20.10.51:11434",
   "api_key": "ollama",
-  "model_name": "gemma3:12b"
+  "model_name": "gemma3:12b",
+  "two_step_ingest": true,
+  "ingest_model": ""
 }

@@ -32,13 +32,21 @@ provider    = cfg.get("provider", "ollama")
 base_url    = cfg.get("ollama_url", "http://localhost:11434")
 current_key = cfg.get("api_key", "ollama")
 model_name  = cfg.get("model_name", "gemma3:12b")
+two_step_ingest = cfg.get("two_step_ingest", True)
+ingest_model    = cfg.get("ingest_model", "")
 
 # ── RAG 引擎初始化（使用 st.session_state 確保單例） ──────────────────────────
 if "rag_engine" not in st.session_state:
-    engine = RAGEngine(ollama_base_url=base_url, docs_dir=DOCS_DIR)
+    engine = RAGEngine(
+        ollama_base_url=base_url,
+        docs_dir=DOCS_DIR,
+        two_step_ingest=two_step_ingest,
+        ingest_model=ingest_model,
+        api_key=current_key
+    )
     ok = engine.initialize()
     if ok:
-        engine.start_watching()   # 啟動背景監控
+        engine.start_watching()
     st.session_state["rag_engine"] = engine
     st.session_state["rag_initialized"] = ok
 
@@ -74,10 +82,24 @@ with st.sidebar:
     rag_summary = rag.get_summary()
     st.caption(rag_summary["status"])
 
-    if rag_summary["indexed_files"]:
-        st.markdown("**已索引文件：**")
-        for fname in rag_summary["indexed_files"]:
-            st.markdown(f"- 📄 {fname}")
+    # 兩階段 Ingest 摘要狀態（#7 修正：使用 os.listdir 掃描的正確資料）
+    if rag_summary.get("two_step_ingest"):
+        summarized = rag_summary["summarized_count"]
+        total_docs = rag_summary["total_docs"]
+        if total_docs > 0:
+            st.caption(f"🧠 **智慧摘要**：{summarized}/{total_docs} 份文件已 LLM 摘要")
+            for fname, has_summary in rag_summary.get("summary_status", {}).items():
+                icon = "✅" if has_summary else "⏳"
+                st.markdown(f"- {icon} {fname}")
+        else:
+            st.caption("🧠 **智慧摘要**：已啟用（docs/ 尚無文件）")
+    else:
+        if rag_summary["indexed_files"]:
+            st.markdown("**已索引文件：**")
+            for fname in rag_summary["indexed_files"]:
+                st.markdown(f"- 📄 {fname}")
+
+    if rag_summary["total_chunks"] > 0 or rag_summary["indexed_files"]:
         st.caption(
             f"共 **{rag_summary['total_chunks']}** 個段落｜"
             f"最後更新：{rag_summary['last_updated']}"
@@ -92,11 +114,20 @@ with st.sidebar:
         st.success("✅ 索引已更新！")
         st.rerun()
 
-    if col_r2.button("🔁 完整重建", use_container_width=True, help="清除所有索引，從頭重新建立（大型文件建議在離峰時間操作）"):
-        with st.spinner("正在完整重建索引，請稍候..."):
-            rag.force_reindex()
+    if col_r2.button("🔁 重建索引", use_container_width=True,
+                     help="清除向量索引並重新向量化（保留 LLM 摘要，速度較快）"):
+        with st.spinner("正在重建向量索引..."):
+            rag.force_reindex(clear_summaries=False)
         st.success("✅ 索引重建完成！")
         st.rerun()
+
+    if rag_summary.get("two_step_ingest"):
+        if st.button("🔁 重建索引＋重新摘要", use_container_width=True,
+                     help="清除摘要並重新跑 LLM 兩階段 Ingest（耗時較長）"):
+            with st.spinner("正在清除摘要並完整重建，請稍候..."):
+                rag.force_reindex(clear_summaries=True)
+            st.success("✅ 完整重建完成！")
+            st.rerun()
 
     st.caption(
         "📌 **新增文件方式**：將 `.pdf` / `.txt` / `.md` 放入 `docs/` 資料夾，"
@@ -105,7 +136,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # 3. 主題知識卡（動態依選擇主題顯示，後段程式碼填入）
+    # 3. 主題知識卡
     st.header("📖 心理學與法令知識卡")
 
 # ── 主題選單 ────────────────────────────────────────────────────────────────────
