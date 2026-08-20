@@ -57,6 +57,8 @@
 
 ## 🛠️ 安裝與啟動步驟
 
+> 💡 **硬體與模型選型建議**：關於不同設備（RTX 3060 Ti / Mac mini Pro / RTX 5080）的模型推薦與輸出品質比較，請參考 [專案硬體部署與模型選擇建議](deployment_recommendations.md)。
+
 ### 前置作業：遠端 Ollama 安裝 embedding 模型
 
 在遠端 Ollama 伺服器（目前為 `172.20.10.51`）執行：
@@ -143,6 +145,7 @@ streamlit run app.py
 ├── requirements.txt        # Python 相依套件
 ├── theme_taxonomy.md       # 10 大主題知識分類庫
 ├── taiwan_vocab.md         # 台灣繁體中文辭彙規範
+├── deployment_recommendations.md # 💻 專案硬體部署與模型選擇建議
 ├── prompts/                # 12 份主題提示詞模組（Type A + Type B）
 ├── docs/                   # 📌 知識文件目錄（新增文件放這裡）
 │   └── *.pdf / *.txt / *.md

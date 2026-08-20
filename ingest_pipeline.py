@@ -32,7 +32,7 @@ if sys.platform == "win32":
 # ── 常數 ──────────────────────────────────────────────────────────────────────
 
 SUMMARIES_DIR_NAME = "summaries"   # 在 docs/ 下的子目錄名稱
-MAX_TEXT_FOR_INGEST = 80_000       # 傳給 LLM 的最大字元數（避免超過 context window）
+MAX_TEXT_FOR_INGEST = 15_000       # 傳給 LLM 的最大字元數（避免超過 context window 或超時）
 
 # ── Stage 1：分析提示詞 ────────────────────────────────────────────────────────
 
@@ -103,8 +103,9 @@ def _call_ollama(
     """
     呼叫 Ollama（OpenAI 相容介面），回傳回覆字串。
     temperature 預設 0.3（比問答低，確保分析穩定）。
+    具備 180 秒超時設定與重試機制。
     """
-    # 清理 URL
+    import time
     base = base_url.strip().rstrip("/")
     if base.endswith("/v1"):
         base = base[:-3].rstrip("/")
@@ -120,22 +121,29 @@ def _call_ollama(
         "stream": False
     }).encode("utf-8")
 
-    req = urllib.request.Request(
-        endpoint,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        },
-        method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        print(f"[Ingest] ⚠️ LLM 呼叫失敗：{e}")
-        return None
+    max_retries = 2
+    for attempt in range(max_retries):
+        req = urllib.request.Request(
+            endpoint,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                return data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"[Ingest] ⚠️ LLM 呼叫失敗（第 {attempt + 1} 次重試）: {e}")
+                time.sleep(2)
+            else:
+                print(f"[Ingest] ⚠️ LLM 呼叫失敗：{e}")
+                return None
+    return None
 
 
 # ── 核心：兩階段 Ingest ────────────────────────────────────────────────────────

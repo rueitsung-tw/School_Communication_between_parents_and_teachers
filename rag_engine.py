@@ -314,9 +314,10 @@ class RAGEngine:
             if self._sync_in_progress:
                 return   # #3 修正：防止重入（watchdog 事件風暴）
             self._sync_in_progress = True
-            try:
-                self._do_sync()
-            finally:
+        try:
+            self._do_sync()
+        finally:
+            with self._lock:
                 self._sync_in_progress = False
 
     def _do_sync(self):
@@ -368,10 +369,10 @@ class RAGEngine:
                 self._source_fingerprints.pop(fpath, None)
                 self._index_fingerprints.pop(fpath, None)
 
-        if newly_indexed:
-            self._save_fingerprints()
+        if newly_indexed or source_changed:
             self._last_updated = datetime.datetime.now()
 
+        self._save_fingerprints()
         self._indexed_files = list(current_files.keys())
         count = self._collection.count() if self._collection else 0
         if not self._indexed_files:
@@ -524,6 +525,9 @@ class RAGEngine:
 
     def start_watching(self):
         """啟動 watchdog，監控 docs/（排除 summaries/ 子目錄）。"""
+        if self._observer is not None and self._observer.is_alive():
+            return
+
         Observer, FileSystemEventHandler = _import_watchdog()
         if Observer is None:
             print("[RAG] ⚠️ watchdog 未安裝")
@@ -544,6 +548,8 @@ class RAGEngine:
                 if (not event.is_directory
                         and not self._is_summaries(event.src_path)
                         and Path(event.src_path).suffix.lower() in SUPPORTED_EXTENSIONS):
+                    if engine_ref._sync_in_progress:
+                        return
                     print(f"[RAG] 🆕 新檔案：{event.src_path}")
                     engine_ref._sync_index()
 
@@ -551,12 +557,16 @@ class RAGEngine:
                 if (not event.is_directory
                         and not self._is_summaries(event.src_path)
                         and Path(event.src_path).suffix.lower() in SUPPORTED_EXTENSIONS):
+                    if engine_ref._sync_in_progress:
+                        return
                     print(f"[RAG] 🔄 檔案更新：{event.src_path}")
                     engine_ref._sync_index()
 
             def on_deleted(self, event):
                 if (not event.is_directory
                         and not self._is_summaries(event.src_path)):
+                    if engine_ref._sync_in_progress:
+                        return
                     print(f"[RAG] 🗑️ 檔案刪除：{event.src_path}")
                     engine_ref._sync_index()
 
