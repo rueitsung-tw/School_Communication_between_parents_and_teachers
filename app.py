@@ -1,8 +1,10 @@
 import os
 import re
 import json
+import importlib
 import streamlit as st
 import utils
+importlib.reload(utils)
 from rag_engine import RAGEngine
 
 # 設定頁面配置
@@ -34,6 +36,7 @@ current_key = cfg.get("api_key", "ollama")
 model_name  = cfg.get("model_name", "gemma3:12b")
 two_step_ingest = cfg.get("two_step_ingest", True)
 ingest_model    = cfg.get("ingest_model", "")
+admin_password  = str(cfg.get("admin_password", "12345678"))
 
 # ── RAG 引擎初始化（使用 st.session_state 確保單例） ──────────────────────────
 if "rag_engine" not in st.session_state:
@@ -64,16 +67,40 @@ def get_taxonomy():
 prompts_db = get_prompts()
 taxonomy_db = get_taxonomy()
 
+# ── 已索引文件與智慧摘要對話框 ──────────────────────────────────────────────────
+@st.dialog("📋 已索引文件與智慧摘要清單")
+def show_indexed_files_dialog(rag_summary: dict):
+    if rag_summary.get("two_step_ingest"):
+        summarized = rag_summary["summarized_count"]
+        total_docs = rag_summary["total_docs"]
+        st.markdown(f"### 🧠 智慧摘要狀態（共 {summarized}/{total_docs} 份文件）")
+        status_dict = rag_summary.get("summary_status", {})
+        if status_dict:
+            for fname, has_summary in status_dict.items():
+                icon = "✅ 已摘要" if has_summary else "⏳ 處理中/等待摘要"
+                st.markdown(f"- **{icon}**：`{fname}`")
+        else:
+            st.info("`docs/` 目錄尚無文件。")
+    else:
+        st.markdown("### 📄 已索引檔案清單")
+        files = rag_summary.get("indexed_files", [])
+        if files:
+            for fname in files:
+                st.markdown(f"- 📄 `{fname}`")
+        else:
+            st.info("尚無已索引檔案。")
+
+    st.caption(
+        f"共 **{rag_summary.get('total_chunks', 0)}** 個段落｜"
+        f"最後更新：{rag_summary.get('last_updated', '未知')}"
+    )
+
 # ── 側邊欄 ─────────────────────────────────────────────────────────────────────
 with st.sidebar:
     # 1. 模型設定資訊
     st.header("⚙️ 目前模型設定")
-    st.info(
-        f"**供應商**：{provider.upper()}\n\n"
-        f"**API 網址**：{base_url}\n\n"
-        f"**模型**：{model_name}\n\n"
-        f"*如需變更，請編輯 `config.json`。*"
-    )
+    st.success("✅ 模型已連接成功")
+    st.caption("如需變更，請編輯 `config.json`。")
     st.markdown("---")
 
     # 2. 知識庫管理面板
@@ -82,22 +109,13 @@ with st.sidebar:
     rag_summary = rag.get_summary()
     st.caption(rag_summary["status"])
 
-    # 兩階段 Ingest 摘要狀態（#7 修正：使用 os.listdir 掃描的正確資料）
+    # 簡短顯示摘要統計與彈窗連結按鈕
     if rag_summary.get("two_step_ingest"):
         summarized = rag_summary["summarized_count"]
         total_docs = rag_summary["total_docs"]
-        if total_docs > 0:
-            st.caption(f"🧠 **智慧摘要**：{summarized}/{total_docs} 份文件已 LLM 摘要")
-            for fname, has_summary in rag_summary.get("summary_status", {}).items():
-                icon = "✅" if has_summary else "⏳"
-                st.markdown(f"- {icon} {fname}")
-        else:
-            st.caption("🧠 **智慧摘要**：已啟用（docs/ 尚無文件）")
+        st.caption(f"🧠 **智慧摘要**：{summarized}/{total_docs} 份文件已 LLM 摘要")
     else:
-        if rag_summary["indexed_files"]:
-            st.markdown("**已索引文件：**")
-            for fname in rag_summary["indexed_files"]:
-                st.markdown(f"- 📄 {fname}")
+        st.caption(f"📄 **已索引文件**：{len(rag_summary.get('indexed_files', []))} 份")
 
     if rag_summary["total_chunks"] > 0 or rag_summary["indexed_files"]:
         st.caption(
@@ -105,38 +123,115 @@ with st.sidebar:
             f"最後更新：{rag_summary['last_updated']}"
         )
     else:
-        st.warning("⚠️ docs/ 目錄尚無可索引文件。\n請將 PDF / TXT / MD 放入 docs/ 資料夾。")
+        st.warning("⚠️ `docs/` 目錄尚無可索引文件。")
 
-    col_r1, col_r2 = st.columns(2)
-    if col_r1.button("🔄 增量更新", use_container_width=True, help="掃描新增或修改的文件並更新索引"):
-        with st.spinner("正在掃描並更新索引..."):
-            rag._sync_index()
-        st.success("✅ 索引已更新！")
-        st.rerun()
-
-    if col_r2.button("🔁 重建索引", use_container_width=True,
-                     help="清除向量索引並重新向量化（保留 LLM 摘要，速度較快）"):
-        with st.spinner("正在重建向量索引..."):
-            rag.force_reindex(clear_summaries=False)
-        st.success("✅ 索引重建完成！")
-        st.rerun()
-
-    if rag_summary.get("two_step_ingest"):
-        if st.button("🔁 重建索引＋重新摘要", use_container_width=True,
-                     help="清除摘要並重新跑 LLM 兩階段 Ingest（耗時較長）"):
-            with st.spinner("正在清除摘要並完整重建，請稍候..."):
-                rag.force_reindex(clear_summaries=True)
-            st.success("✅ 完整重建完成！")
-            st.rerun()
-
-    st.caption(
-        "📌 **新增文件方式**：將 `.pdf` / `.txt` / `.md` 放入 `docs/` 資料夾，"
-        "按「🔄 增量更新」即可自動索引，無需重啟系統。"
-    )
+    if st.button("📋 查閱已索引文件清單", use_container_width=True):
+        show_indexed_files_dialog(rag_summary)
 
     st.markdown("---")
 
-    # 3. 主題知識卡
+    # 3. 管理員功能區塊（密碼解鎖防護）
+    if "is_admin_authenticated" not in st.session_state:
+        st.session_state["is_admin_authenticated"] = False
+
+    st.subheader("🔐 管理員控制台")
+
+    if not st.session_state["is_admin_authenticated"]:
+        with st.form("admin_login_form"):
+            input_pwd = st.text_input("🔑 輸入管理者密碼", type="password", placeholder="預設密碼 12345678")
+            submit_pwd = st.form_submit_button("🔓 解鎖管理功能", use_container_width=True)
+            if submit_pwd:
+                if input_pwd == admin_password:
+                    st.session_state["is_admin_authenticated"] = True
+                    st.success("✅ 驗證成功，管理權限已解鎖！")
+                    st.rerun()
+                else:
+                    st.error("❌ 密碼錯誤，無法存取管理功能。")
+        st.caption("🔒 索引重建、新增網址與上傳檔案需要管理者權限。")
+    else:
+        col_lock1, col_lock2 = st.columns([3, 1])
+        with col_lock1:
+            st.success("🔓 已取得管理者權限")
+        with col_lock2:
+            if st.button("🔒 鎖定", use_container_width=True, help="登出管理者權限"):
+                st.session_state["is_admin_authenticated"] = False
+                st.rerun()
+
+        col_r1, col_r2 = st.columns(2)
+        if col_r1.button("🔄 增量更新", use_container_width=True, help="掃描新增或修改的文件並更新索引"):
+            with st.spinner("正在掃描並更新索引..."):
+                rag._sync_index()
+            st.success("✅ 索引已更新！")
+            st.rerun()
+
+        if col_r2.button("🔁 重建索引", use_container_width=True,
+                         help="清除向量索引並重新向量化（保留 LLM 摘要，速度較快）"):
+            with st.spinner("正在重建向量索引..."):
+                rag.force_reindex(clear_summaries=False)
+            st.success("✅ 索引重建完成！")
+            st.rerun()
+
+        if rag_summary.get("two_step_ingest"):
+            if st.button("🔁 重建索引＋重新摘要", use_container_width=True,
+                         help="清除摘要並重新跑 LLM 兩階段 Ingest（耗時較長）"):
+                with st.spinner("正在清除摘要並完整重建，請稍候..."):
+                    rag.force_reindex(clear_summaries=True)
+                st.success("✅ 完整重建完成！")
+                st.rerun()
+
+        # 快速新增內容區塊 (檔案上傳 / 網址匯入)
+        with st.expander("➕ 新增文件或網址至知識庫", expanded=False):
+            tab_file, tab_url = st.tabs(["📤 上傳檔案", "🌐 輸入網址"])
+            
+            with tab_file:
+                uploaded_files = st.file_uploader(
+                    "選擇 `.pdf` / `.txt` / `.md` 檔案",
+                    type=["pdf", "txt", "md"],
+                    accept_multiple_files=True,
+                    key="rag_file_uploader"
+                )
+                if st.button("📥 儲存檔案並更新索引", use_container_width=True, key="btn_save_uploaded"):
+                    if uploaded_files:
+                        saved_count = 0
+                        for ufile in uploaded_files:
+                            ok, fname, msg = utils.save_uploaded_file(ufile, DOCS_DIR)
+                            if ok:
+                                saved_count += 1
+                            else:
+                                st.error(f"❌ {fname}: {msg}")
+                        if saved_count > 0:
+                            with st.spinner("正在進行向量化與智慧摘要..."):
+                                rag._sync_index()
+                            st.success(f"✅ 成功上傳 {saved_count} 個檔案並完成索引！")
+                            st.rerun()
+                    else:
+                        st.warning("請先選擇要上傳的檔案。")
+
+            with tab_url:
+                input_url = st.text_input("貼上網頁網址 (URL)", placeholder="https://example.com/article", key="rag_url_input")
+                if st.button("🌐 抓取網頁並更新索引", use_container_width=True, key="btn_fetch_url"):
+                    if input_url.strip():
+                        with st.spinner("正在抓取網頁內容..."):
+                            ok, filename, content_or_msg = utils.fetch_url_content(input_url.strip())
+                        if ok:
+                            target_path = os.path.join(DOCS_DIR, filename)
+                            try:
+                                with open(target_path, "w", encoding="utf-8") as f:
+                                    f.write(content_or_msg)
+                                with st.spinner("正在進行向量化與智慧摘要..."):
+                                    rag._sync_index()
+                                st.success(f"✅ 成功抓取網頁並儲存為 `{filename}`！")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ 檔案寫入失敗: {e}")
+                        else:
+                            st.error(f"❌ {content_or_msg}")
+                    else:
+                        st.warning("請輸入有效的網址。")
+
+    st.markdown("---")
+
+    # 4. 主題知識卡
     st.header("📖 心理學與法令知識卡")
 
 # ── 主題選單 ────────────────────────────────────────────────────────────────────

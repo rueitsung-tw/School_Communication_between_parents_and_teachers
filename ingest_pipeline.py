@@ -14,12 +14,20 @@ ingest_pipeline.py — 兩階段智慧 Ingest Pipeline
 """
 
 import os
+import sys
 import json
 import hashlib
 import datetime
 import urllib.request
 from pathlib import Path
 from typing import Optional, Dict, Any
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ── 常數 ──────────────────────────────────────────────────────────────────────
 

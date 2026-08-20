@@ -4,5 +4,6 @@
   "api_key": "ollama",
   "model_name": "gemma3:12b",
   "two_step_ingest": true,
-  "ingest_model": ""
+  "ingest_model": "",
+  "admin_password": "12345678"
 }

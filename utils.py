@@ -6,6 +6,7 @@ import datetime
 import urllib.request
 import openai
 import google.generativeai as genai
+from html.parser import HTMLParser
 from typing import Dict, List, Tuple, Optional
 
 def clean_base_url(url: str) -> str:
@@ -269,3 +270,172 @@ def call_llm_api(
         
     else:
         raise ValueError(f"不支援的 AI 供應商: {provider}")
+
+class HTMLTextExtractor(HTMLParser):
+    VOID_TAGS = {'meta', 'link', 'img', 'br', 'hr', 'input', 'base', 'area', 'col', 'embed', 'source', 'track', 'wbr'}
+    IGNORE_TAGS = {'script', 'style', 'noscript'}
+
+    def __init__(self):
+        super().__init__()
+        self.result = []
+        self.current_tags = []
+        self.title = ""
+        self.in_title = False
+
+    def handle_starttag(self, tag, attrs):
+        tag_lower = tag.lower()
+        if tag_lower == 'title':
+            self.in_title = True
+        elif tag_lower not in self.VOID_TAGS:
+            self.current_tags.append(tag_lower)
+
+    def handle_endtag(self, tag):
+        tag_lower = tag.lower()
+        if tag_lower == 'title':
+            self.in_title = False
+        elif tag_lower not in self.VOID_TAGS:
+            if tag_lower in self.current_tags:
+                while self.current_tags:
+                    popped = self.current_tags.pop()
+                    if popped == tag_lower:
+                        break
+
+    def handle_data(self, data):
+        text = data.strip()
+        if not text:
+            return
+        if self.in_title:
+            self.title += data
+        else:
+            if not any(t in self.IGNORE_TAGS for t in self.current_tags):
+                self.result.append(text)
+
+    def get_text(self) -> str:
+        content = "\n\n".join(self.result)
+        content = re.sub(r'\n{3,}', '\n\n', content)
+        return content
+
+def fetch_url_content(url: str, timeout: int = 15) -> Tuple[bool, str, str]:
+    """
+    從 URL 抓取網頁，並提取標題與內文轉換成 Markdown 格式。
+    支援多重編碼（UTF-8, Big5等）與 SPA / JavaScript 網頁靜態資料解構。
+    回傳 Tuple[成功與否, 產生的檔名, 訊息或Markdown內文]
+    """
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    try:
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            content_type = resp.headers.get("Content-Type", "")
+            raw_bytes = resp.read()
+
+            html_text = ""
+            for enc in ["utf-8", "big5", "cp950", "gbk"]:
+                try:
+                    decoded = raw_bytes.decode(enc)
+                    if "\ufffd" not in decoded[:1000]:
+                        html_text = decoded
+                        break
+                except Exception:
+                    pass
+            if not html_text:
+                html_text = raw_bytes.decode("utf-8", errors="replace")
+
+        parser = HTMLTextExtractor()
+        parser.feed(html_text)
+        page_title = parser.title.strip() if parser.title.strip() else ""
+        page_text = parser.get_text().strip()
+
+        # 針對 SPA / JavaScript 渲染網頁的備援提取機制 (如 siteserverData)
+        if len(page_text) < 50:
+            extra_blocks = []
+            m_json = re.search(r'window\.siteserverData\s*=\s*(\{.*?\});', html_text, re.DOTALL)
+            if m_json:
+                try:
+                    data = json.loads(m_json.group(1))
+                    if not page_title:
+                        page_title = data.get("pageSet", {}).get("heading", "") or data.get("siteSet", {}).get("title", "")
+                    def _extract_json_text(d):
+                        if isinstance(d, dict):
+                            for k, v in d.items():
+                                if k in ["html", "content", "text", "description", "heading"] and isinstance(v, str):
+                                    clean = re.sub(r'<[^>]+>', ' ', v)
+                                    clean = re.sub(r'\s+', ' ', clean).strip()
+                                    if len(clean) > 3 and not clean.startswith("http") and clean not in extra_blocks:
+                                        extra_blocks.append(clean)
+                                _extract_json_text(v)
+                        elif isinstance(d, list):
+                            for item in d:
+                                _extract_json_text(item)
+                    _extract_json_text(data)
+                except Exception:
+                    pass
+
+            if not extra_blocks:
+                cleaned_html = re.sub(r'<script[^>]*>.*?</script>', '', html_text, flags=re.DOTALL | re.IGNORECASE)
+                cleaned_html = re.sub(r'<style[^>]*>.*?</style>', '', cleaned_html, flags=re.DOTALL | re.IGNORECASE)
+                chinese_blocks = re.findall(r'[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef\w\d\s，。；：、「」『』（）《》【】]{5,}', cleaned_html)
+                for b in chinese_blocks:
+                    block_clean = b.strip()
+                    if len(block_clean) > 5 and not any(k in block_clean for k in ["function", "var ", "const ", "let ", "document.", "window.", "http"]):
+                        if block_clean not in extra_blocks:
+                            extra_blocks.append(block_clean)
+
+            if extra_blocks:
+                page_text = "\n\n".join(extra_blocks)
+
+        if not page_title:
+            page_title = "未命名網頁"
+
+        if not page_text or len(page_text.strip()) < 5:
+            return False, "", "無法從網頁中提取出有效文字。"
+
+        safe_title = re.sub(r'[\\/:*?"<>|]', '_', page_title)[:30].strip()
+        if not safe_title:
+            safe_title = "web_content"
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"web_{safe_title}_{timestamp}.md"
+
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        md_content = f"""---
+title: "{page_title}"
+source_url: "{url}"
+fetched_at: "{now_str}"
+---
+
+# {page_title}
+
+> 來源網址：{url}  
+> 擷取時間：{now_str}
+
+---
+
+{page_text}
+"""
+        return True, filename, md_content
+
+    except Exception as e:
+        return False, "", f"網頁抓取失敗：{e}"
+
+def save_uploaded_file(uploaded_file, docs_dir: str) -> Tuple[bool, str, str]:
+    """
+    將 Streamlit 上傳的檔案寫入 docs_dir。
+    """
+    try:
+        os.makedirs(docs_dir, exist_ok=True)
+        filename = uploaded_file.name
+        safe_filename = os.path.basename(filename)
+        target_path = os.path.join(docs_dir, safe_filename)
+
+        with open(target_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        return True, safe_filename, f"檔案 `{safe_filename}` 上傳成功！"
+    except Exception as e:
+        return False, "", f"檔案儲存失敗：{e}"
+

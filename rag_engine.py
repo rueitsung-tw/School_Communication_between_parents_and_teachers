@@ -11,6 +11,7 @@ rag_engine.py — 親師溝通知識庫 RAG 引擎（方案 B：語意搜尋版�
 """
 
 import os
+import sys
 import re
 import json
 import hashlib
@@ -19,6 +20,13 @@ import threading
 import urllib.request
 from pathlib import Path
 from typing import List, Dict, Optional
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ── 第三方函式庫（懶載入） ───────────────────────────────────────────────────
 

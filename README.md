@@ -95,9 +95,14 @@ pip install -r requirements.txt
   "provider": "ollama",
   "ollama_url": "http://你的伺服器IP:11434",
   "api_key": "ollama",
-  "model_name": "gemma3:12b"
+  "model_name": "gemma3:12b",
+  "two_step_ingest": true,
+  "admin_password": "你的管理者密碼"
 }
 ```
+
+> ⚠️ **管理者安全提醒**：
+> 系統預設管理者密碼為 `12345678`。初次使用或部署系統前，**請務必編輯 `config.json` 中的 `"admin_password"` 設定為強密碼**，以保護「新增網址」、「上傳文件」與「重建索引」等管理控制功能。
 
 ### 3. 啟動系統
 
