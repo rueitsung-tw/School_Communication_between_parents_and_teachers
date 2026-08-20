@@ -4,8 +4,21 @@ import json
 import hashlib
 import datetime
 import urllib.request
+import warnings
 import openai
-import google.generativeai as genai
+
+try:
+    from google import genai
+    USE_NEW_GENAI = True
+except ImportError:
+    USE_NEW_GENAI = False
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            import google.generativeai as genai
+    except ImportError:
+        genai = None
+
 from html.parser import HTMLParser
 from typing import Dict, List, Tuple, Optional
 
@@ -246,14 +259,29 @@ def call_llm_api(
         return response.choices[0].message.content
         
     elif provider.lower() == "gemini":
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(
-            model_name=model_name,
-            system_instruction=system_prompt,
-            generation_config={"temperature": 0.7}
-        )
-        response = model.generate_content(user_message)
-        return response.text
+        if USE_NEW_GENAI:
+            client = genai.Client(api_key=api_key)
+            config = {}
+            if system_prompt:
+                config["system_instruction"] = system_prompt
+            config["temperature"] = 0.7
+            response = client.models.generate_content(
+                model=model_name,
+                contents=user_message,
+                config=config if config else None
+            )
+            return response.text
+        elif genai is not None:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                system_instruction=system_prompt,
+                generation_config={"temperature": 0.7}
+            )
+            response = model.generate_content(user_message)
+            return response.text
+        else:
+            raise ImportError("未安裝 google-genai 或 google-generativeai 封包")
         
     elif provider.lower() == "ollama":
         endpoint = clean_base_url(base_url) if base_url else "http://localhost:11434"

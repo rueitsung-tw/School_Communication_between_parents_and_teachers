@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ── 設定路徑 ───────────────────────────────────────────────────────────────────
-BASE_DIR    = r"F:\親師溝通提示詞"
+BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
 DOCS_DIR    = os.path.join(BASE_DIR, "docs")
@@ -26,8 +26,21 @@ VOCAB_PATH    = os.path.join(BASE_DIR, "taiwan_vocab.md")
 # ── 讀取設定 ───────────────────────────────────────────────────────────────────
 def load_config() -> dict:
     """讀取 config.json，取得固定的模型與 API 設定。"""
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "provider": "ollama",
+        "ollama_url": "http://localhost:11434",
+        "api_key": "ollama",
+        "model_name": "gemma3:12b",
+        "two_step_ingest": True,
+        "ingest_model": "",
+        "admin_password": "12345678"
+    }
 
 cfg         = load_config()
 provider    = cfg.get("provider", "ollama")
