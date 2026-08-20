@@ -175,6 +175,16 @@ def file_fingerprint(filepath: str) -> str:
     return h.hexdigest()
 
 
+def normalize_path(filepath: str) -> str:
+    """統一檔案路徑格式（全絕對路徑、大寫磁碟機代號），防範 Windows 大小寫比對失敗。"""
+    if not filepath:
+        return ""
+    norm = os.path.abspath(os.path.normpath(filepath))
+    if len(norm) >= 2 and norm[1] == ":":
+        norm = norm[0].upper() + norm[1:]
+    return norm
+
+
 def scan_directory_files(directory: str) -> Dict[str, str]:
     """
     掃描 docs/ 目錄下所有支援格式的原始文件。
@@ -183,22 +193,20 @@ def scan_directory_files(directory: str) -> Dict[str, str]:
     result = {}
     if not os.path.exists(directory):
         return result
-    summaries_abs = os.path.normpath(
-        os.path.join(directory, SUMMARIES_DIR_NAME)
-    )
-    for root, dirs, files in os.walk(directory):
-        # #1 修正：若 root 是 summaries/ 或其子目錄，跳過
-        if os.path.normpath(root).startswith(summaries_abs):
+    directory_norm = normalize_path(directory)
+    summaries_abs = normalize_path(os.path.join(directory_norm, SUMMARIES_DIR_NAME))
+
+    for root, dirs, files in os.walk(directory_norm):
+        root_norm = normalize_path(root)
+        if root_norm.startswith(summaries_abs):
             dirs.clear()  # 阻止 os.walk 繼續遞迴進入
             continue
-        # 也從 dirs 中移除 summaries，讓 os.walk 不再進入
-        dirs[:] = [d for d in dirs if os.path.normpath(
-            os.path.join(root, d)) != summaries_abs]
+        dirs[:] = [d for d in dirs if normalize_path(os.path.join(root, d)) != summaries_abs]
 
         for fname in files:
             ext = Path(fname).suffix.lower()
             if ext in SUPPORTED_EXTENSIONS:
-                fpath = os.path.join(root, fname)
+                fpath = normalize_path(os.path.join(root, fname))
                 result[fpath] = file_fingerprint(fpath)
     return result
 
@@ -226,8 +234,8 @@ class RAGEngine:
         api_key: str = "ollama"
     ):
         self.ollama_base_url = ollama_base_url
-        self.docs_dir = docs_dir
-        self.db_path = db_path
+        self.docs_dir = normalize_path(docs_dir)
+        self.db_path = normalize_path(db_path)
         self.two_step_ingest = two_step_ingest
         self.ingest_model = ingest_model   # 空字串時由 _ingest_model property 動態取
         self.api_key = api_key
@@ -252,7 +260,7 @@ class RAGEngine:
 
     @property
     def _summaries_dir(self) -> str:
-        return os.path.join(self.docs_dir, SUMMARIES_DIR_NAME)
+        return normalize_path(os.path.join(self.docs_dir, SUMMARIES_DIR_NAME))
 
     def initialize(self) -> bool:
         chromadb = _import_chromadb()
@@ -276,10 +284,10 @@ class RAGEngine:
     # ── 指紋持久化（兩組） ────────────────────────────────────────────────────
 
     def _source_fp_path(self) -> str:
-        return os.path.join(self.db_path, "source_fingerprints.json")
+        return normalize_path(os.path.join(self.db_path, "source_fingerprints.json"))
 
     def _index_fp_path(self) -> str:
-        return os.path.join(self.db_path, "index_fingerprints.json")
+        return normalize_path(os.path.join(self.db_path, "index_fingerprints.json"))
 
     def _load_fingerprints(self):
         for path_fn, attr in [
@@ -290,7 +298,8 @@ class RAGEngine:
             if os.path.exists(fp_path):
                 try:
                     with open(fp_path, "r", encoding="utf-8") as f:
-                        setattr(self, attr, json.load(f))
+                        data = json.load(f)
+                        setattr(self, attr, {normalize_path(k): v for k, v in data.items()})
                 except Exception:
                     setattr(self, attr, {})
 
@@ -301,7 +310,8 @@ class RAGEngine:
             (self._index_fp_path, "_index_fingerprints"),
         ]:
             with open(path_fn(), "w", encoding="utf-8") as f:
-                json.dump(getattr(self, attr), f, ensure_ascii=False, indent=2)
+                data = {normalize_path(k): v for k, v in getattr(self, attr).items()}
+                json.dump(data, f, ensure_ascii=False, indent=2)
 
     # ── 索引同步 ──────────────────────────────────────────────────────────────
 
@@ -325,6 +335,7 @@ class RAGEngine:
         newly_indexed = []
 
         for fpath, source_fp in current_files.items():
+            fpath = normalize_path(fpath)
             # --- 判斷是否需要重新摘要（比對原始文件指紋）---
             source_changed = self._source_fingerprints.get(fpath) != source_fp
 
@@ -351,8 +362,8 @@ class RAGEngine:
             if source_changed and self.two_step_ingest:
                 new_summary = self._run_ingest(fpath)
                 if new_summary and os.path.exists(new_summary):
-                    index_material = new_summary
-                    material_fp = file_fingerprint(new_summary)
+                    index_material = normalize_path(new_summary)
+                    material_fp = file_fingerprint(index_material)
                 # 不管摘要是否成功，更新原始文件指紋
                 self._source_fingerprints[fpath] = source_fp
 
@@ -385,7 +396,7 @@ class RAGEngine:
     def _get_summary_path(self, source_filepath: str) -> str:
         """回傳原始文件對應的摘要 .md 路徑。"""
         stem = Path(source_filepath).stem
-        return os.path.join(self._summaries_dir, f"{stem}_summary.md")
+        return normalize_path(os.path.join(self._summaries_dir, f"{stem}_summary.md"))
 
     def _run_ingest(self, source_filepath: str) -> Optional[str]:
         """
