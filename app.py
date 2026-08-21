@@ -266,7 +266,9 @@ theme_options = {
     "10_LINE群組溝通禮儀與界線": "10 LINE 群組溝通禮儀與界線"
 }
 
-available_themes = [k for k in theme_options.keys() if any(k in pk for pk in prompts_db.keys())]
+available_themes = [k for k in theme_options.keys() if utils.theme_has_prompts(k, prompts_db)]
+if not available_themes:
+    available_themes = list(theme_options.keys())
 
 selected_theme_key = st.selectbox(
     "🎯 請選擇親師溝通主題：",

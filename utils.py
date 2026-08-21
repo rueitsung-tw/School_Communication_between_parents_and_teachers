@@ -66,21 +66,43 @@ def get_ollama_models(base_url: str = "http://localhost:11434", api_key: str = "
     # 預設回傳常見模型列表以防伺服器未啟動
     return ["qwen2.5:7b", "llama3", "gemma2", "mistral"]
 
+def normalize_markdown_newlines(content: str) -> str:
+    """
+    如果 Markdown 內容疑似被儲存為單行且包含字面上的 '\\n'，將其安全正規化為標準換行。
+    若內容已具備正常多行結構，則保持原樣不變。
+    """
+    if not content:
+        return content
+    lines = content.splitlines()
+    if len(lines) <= 3 and r"\n" in content:
+        return content.replace(r"\r\n", "\n").replace(r"\n", "\n")
+    return content
+
 def extract_prompt_from_markdown(content: str, section_title: str) -> Optional[str]:
     """
-    從 Markdown 內容中，根據小標題（例如 '## Type A' 或 '## 提示詞'）
-    提取緊隨其後的第一個 code block 內容。
+    從 Markdown 內容中，根據小標題（例如 '## Type A'、'## Type B' 或 '## 提示詞'）
+    提取緊隨其後的第一個完整 Markdown code block 內容。
+    不受 Prompt 內部 '##' 或其他次級標題影響。
     """
-    pattern = rf"(##\s+{re.escape(section_title)}.*?)\n(.*?)(?=\n##\s+|\Z)"
-    match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
+    if not content or not section_title:
+        return None
+
+    content = normalize_markdown_newlines(content)
+
+    # 支援「## Type A」、「## Type A：家長訊息分析器」、「## Type A: 家長訊息分析器」、「## 提示詞」、「### 提示詞」等各級標題
+    # 1. 優先嘗試標題開頭即為 section_title 的情況
+    pattern = rf"(?:^|\n)#{{1,6}}\s*{re.escape(section_title)}[^\n]*(?:\r?\n|$)"
+    match = re.search(pattern, content, re.IGNORECASE)
     if not match:
-        pattern = rf"(##\s*.*{re.escape(section_title)}.*?)\n(.*?)(?=\n##\s*|\Z)"
-        match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
+        # 2. 次之嘗試標題中包含 section_title 的情況
+        pattern = rf"(?:^|\n)#{{1,6}}\s*[^\n]*{re.escape(section_title)}[^\n]*(?:\r?\n|$)"
+        match = re.search(pattern, content, re.IGNORECASE)
         if not match:
             return None
-            
-    section_content = match.group(2)
-    code_match = re.search(r"```[a-zA-Z]*\n(.*?)```", section_content, re.DOTALL)
+
+    # 從找到的標題之後，擷取第一個完整的 Markdown code block
+    remainder = content[match.end():]
+    code_match = re.search(r"```[a-zA-Z0-9_-]*\r?\n(.*?)```", remainder, re.DOTALL)
     if code_match:
         return code_match.group(1).strip()
     return None
@@ -89,14 +111,26 @@ def parse_prompt_file(filepath: str) -> Dict[str, str]:
     """
     解析單個提示詞 md 檔案，回傳一個包含 Type A 和 Type B 提示詞的字典。
     """
+    if not os.path.exists(filepath):
+        return {}
+
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
-    
+
+    content = normalize_markdown_newlines(content)
     filename = os.path.basename(filepath)
     result = {}
-    
+
     if "00_通用" in filename:
         prompt_text = extract_prompt_from_markdown(content, "提示詞")
+        if not prompt_text:
+            key_name = "Type A" if "TypeA" in filename else "Type B"
+            prompt_text = extract_prompt_from_markdown(content, key_name)
+        if not prompt_text:
+            code_match = re.search(r"```[a-zA-Z0-9_-]*\r?\n(.*?)```", content, re.DOTALL)
+            if code_match:
+                prompt_text = code_match.group(1).strip()
+
         if prompt_text:
             if "TypeA" in filename:
                 result["Type A"] = prompt_text
@@ -109,7 +143,7 @@ def parse_prompt_file(filepath: str) -> Dict[str, str]:
             result["Type A"] = prompt_a
         if prompt_b:
             result["Type B"] = prompt_b
-            
+
     return result
 
 def load_all_prompts(prompts_dir: str) -> Dict[str, Dict[str, str]]:
@@ -118,15 +152,26 @@ def load_all_prompts(prompts_dir: str) -> Dict[str, Dict[str, str]]:
     """
     prompts_db = {}
     if not os.path.exists(prompts_dir):
+        print(f"⚠️ 警告：提示詞目錄不存在：{prompts_dir}")
         return prompts_db
-        
-    for filename in os.listdir(prompts_dir):
+
+    for filename in sorted(os.listdir(prompts_dir)):
         if filename.endswith(".md"):
             filepath = os.path.join(prompts_dir, filename)
             theme_key = filename.replace(".md", "")
-            prompts_db[theme_key] = parse_prompt_file(filepath)
-            
+            parsed = parse_prompt_file(filepath)
+            prompts_db[theme_key] = parsed
+            if not parsed or (not parsed.get("Type A") and not parsed.get("Type B")):
+                print(f"⚠️ 警告：提示詞檔案解析失敗或無 Type A/B：{filename}")
+
     return prompts_db
+
+def theme_has_prompts(theme_prefix: str, db: dict) -> bool:
+    """
+    檢查指定主題在 prompts_db 中是否至少包含有效提示詞 (Type A 或 Type B)。
+    """
+    matching_entries = [v for k, v in db.items() if theme_prefix in k and isinstance(v, dict)]
+    return any(bool(entry.get("Type A") or entry.get("Type B")) for entry in matching_entries)
 
 def load_theme_taxonomy(filepath: str) -> Dict[int, Dict]:
     """

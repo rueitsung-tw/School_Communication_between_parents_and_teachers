@@ -45,3 +45,4 @@ desktop.ini
 # 日誌
 *.log
 plans/
+.agy-runs/
