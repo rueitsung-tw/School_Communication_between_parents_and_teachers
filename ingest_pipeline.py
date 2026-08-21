@@ -15,10 +15,12 @@ ingest_pipeline.py — 兩階段智慧 Ingest Pipeline
 
 import os
 import sys
+import re
 import json
 import hashlib
 import datetime
 import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -32,7 +34,21 @@ if sys.platform == "win32":
 # ── 常數 ──────────────────────────────────────────────────────────────────────
 
 SUMMARIES_DIR_NAME = "summaries"   # 在 docs/ 下的子目錄名稱
-MAX_TEXT_FOR_INGEST = 15_000       # 傳給 LLM 的最大字元數（避免超過 context window 或超時）
+MAX_TEXT_FOR_INGEST = 8_000        # 傳給 LLM 的最大字元數（降低門檻以防 context window 超限）
+
+# ── 文字清洗 ──────────────────────────────────────────────────────────────────
+
+def clean_text_for_llm(text: str) -> str:
+    """
+    清理即將傳給 LLM 的文字：
+    1. 移除 ASCII 控制字元 ([\x00-\x08\x0b\x0c\x0e-\x1f\x7f])，特別是 PDF 提取時常產生的 \x00 (Null Byte)
+    2. 移除 Unicode 零寬字元 ([\u200b-\u200d\ufeff])
+    """
+    if not text:
+        return ""
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+    text = re.sub(r'[\u200b-\u200d\ufeff]', '', text)
+    return text
 
 # ── Stage 1：分析提示詞 ────────────────────────────────────────────────────────
 
@@ -103,7 +119,7 @@ def _call_ollama(
     """
     呼叫 Ollama（OpenAI 相容介面），回傳回覆字串。
     temperature 預設 0.3（比問答低，確保分析穩定）。
-    具備 180 秒超時設定與重試機制。
+    具備 180 秒超時設定、3 次重試與增強型 HTTP 400 回應解析機制。
     """
     import time
     base = base_url.strip().rstrip("/")
@@ -121,7 +137,7 @@ def _call_ollama(
         "stream": False
     }).encode("utf-8")
 
-    max_retries = 2
+    max_retries = 3
     for attempt in range(max_retries):
         req = urllib.request.Request(
             endpoint,
@@ -136,10 +152,21 @@ def _call_ollama(
             with urllib.request.urlopen(req, timeout=180) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 return data["choices"][0]["message"]["content"].strip()
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="ignore")
+            msg = f"HTTP Error {e.code}: {e.reason}"
+            if error_body:
+                msg += f" | 伺服器回應: {error_body[:300]}"
+            if attempt < max_retries - 1:
+                print(f"[Ingest] ⚠️ LLM 呼叫失敗（第 {attempt + 1} 次重試）: {msg}")
+                time.sleep(3 * (attempt + 1))
+            else:
+                print(f"[Ingest] ⚠️ LLM 呼叫失敗：{msg}")
+                return None
         except Exception as e:
             if attempt < max_retries - 1:
                 print(f"[Ingest] ⚠️ LLM 呼叫失敗（第 {attempt + 1} 次重試）: {e}")
-                time.sleep(2)
+                time.sleep(3 * (attempt + 1))
             else:
                 print(f"[Ingest] ⚠️ LLM 呼叫失敗：{e}")
                 return None
@@ -159,9 +186,12 @@ def analyze_document(
     Stage 1：呼叫 LLM 分析文件，回傳 JSON 格式的分析結果 dict。
     失敗時回傳 None。
     """
+    # 進行文字清洗（移除控制字元與不可列印字元）
+    cleaned = clean_text_for_llm(text)
+
     # 截斷過長的文字（避免超過 context window）
-    truncated = text[:MAX_TEXT_FOR_INGEST]
-    if len(text) > MAX_TEXT_FOR_INGEST:
+    truncated = cleaned[:MAX_TEXT_FOR_INGEST]
+    if len(cleaned) > MAX_TEXT_FOR_INGEST:
         print(f"[Ingest] ⚠️ 文件超過 {MAX_TEXT_FOR_INGEST} 字，已截斷後送入 Stage 1")
 
     user_msg = STAGE1_USER_TEMPLATE.format(filename=filename, text=truncated)
