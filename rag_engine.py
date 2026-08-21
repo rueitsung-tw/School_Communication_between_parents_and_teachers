@@ -389,41 +389,45 @@ class RAGEngine:
     def _do_sync(self):
         current_files = scan_directory_files(self.docs_dir)
         newly_indexed = []
+        any_file_processed = False
 
         for fpath, source_fp in current_files.items():
             fpath = normalize_path(fpath)
-            # --- 判斷是否需要重新摘要（比對原始文件指紋）---
-            source_changed = self._source_fingerprints.get(fpath) != source_fp
-
-            # --- 取得此文件「實際被索引材料」的指紋 ---
             summary_path = self._get_summary_path(fpath)
-            index_material = summary_path if (os.path.exists(summary_path) and not source_changed) else None
+            has_valid_summary = os.path.isfile(summary_path) and os.path.getsize(summary_path) > 0
 
-            if index_material and os.path.exists(index_material):
-                # 摘要存在且原始文件未改變：以摘要指紋決定是否重新索引
+            # 檢查摘要是否存在且完整（> 0 byte）
+            if has_valid_summary:
+                # 摘要已存在且完整：以此摘要為索引材料，跳過 LLM 重新摘要
+                index_material = summary_path
                 material_fp = file_fingerprint(index_material)
             else:
-                # 無摘要或原始文件已改變：以原始文件指紋為 index_material
-                material_fp = source_fp
-                index_material = fpath
+                # 無有效摘要：若開啟 two_step_ingest，由 LLM 重新生成
+                if self.two_step_ingest:
+                    new_summary = self._run_ingest(fpath)
+                    if new_summary and os.path.isfile(new_summary) and os.path.getsize(new_summary) > 0:
+                        index_material = normalize_path(new_summary)
+                        material_fp = file_fingerprint(index_material)
+                    else:
+                        index_material = fpath
+                        material_fp = source_fp
+                else:
+                    index_material = fpath
+                    material_fp = source_fp
 
+            # 更新原始文件指紋
+            self._source_fingerprints[fpath] = source_fp
+
+            # 判斷實際索引材料是否需要重新向量化
             index_changed = self._index_fingerprints.get(fpath) != material_fp
 
-            if not source_changed and not index_changed:
-                continue   # 兩者均未變化，跳過
+            if not index_changed:
+                continue   # 向量索引內容無變化，跳過
 
             print(f"[RAG] 📄 處理：{os.path.basename(fpath)}")
+            any_file_processed = True
 
-            # --- 若原始文件變更且開啟兩階段 Ingest，重新生成摘要 ---
-            if source_changed and self.two_step_ingest:
-                new_summary = self._run_ingest(fpath)
-                if new_summary and os.path.exists(new_summary):
-                    index_material = normalize_path(new_summary)
-                    material_fp = file_fingerprint(index_material)
-                # 不管摘要是否成功，更新原始文件指紋
-                self._source_fingerprints[fpath] = source_fp
-
-            # --- 執行向量索引 ---
+            # 執行向量索引
             success = self._index_file(source_fpath=fpath, material_path=index_material)
             if success:
                 self._index_fingerprints[fpath] = material_fp
@@ -435,8 +439,9 @@ class RAGEngine:
                 self._remove_file_from_index(fpath)
                 self._source_fingerprints.pop(fpath, None)
                 self._index_fingerprints.pop(fpath, None)
+                any_file_processed = True
 
-        if newly_indexed or source_changed:
+        if newly_indexed or any_file_processed:
             self._last_updated = datetime.datetime.now()
 
         self._save_fingerprints()
@@ -691,6 +696,7 @@ class RAGEngine:
         """
         #7 修正：以 os.listdir 掃描 docs/ 頂層文件（不遞迴），
         排除 summaries/ 子目錄本身，回傳 {filename: has_summary}。
+        確認摘要檔案存在且大小 > 0。
         """
         result = {}
         if not os.path.exists(self.docs_dir):
@@ -700,7 +706,7 @@ class RAGEngine:
             if os.path.isfile(fpath) and Path(fname).suffix.lower() in SUPPORTED_EXTENSIONS:
                 stem = Path(fname).stem
                 summary_path = os.path.join(self._summaries_dir, f"{stem}_summary.md")
-                result[fname] = os.path.exists(summary_path)
+                result[fname] = os.path.isfile(summary_path) and os.path.getsize(summary_path) > 0
         return result
 
     def force_reindex(self, clear_summaries: bool = False):

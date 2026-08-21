@@ -389,6 +389,8 @@ if btn_col1.button("🔍 分析家長需求 (Type A)", use_container_width=True)
                 prompt_run = system_prompt_a
                 if "{在此貼上家長的訊息}" in prompt_run:
                     prompt_run = prompt_run.replace("{在此貼上家長的訊息}", parent_message)
+                if "{選填：教師補充背景}" in prompt_run:
+                    prompt_run = prompt_run.replace("{選填：教師補充背景}", context)
 
                 # 組合：靜態知識庫 + 語意搜尋結果
                 full_system_prompt = prompt_run + "\n\n" + knowledge_context
@@ -428,51 +430,84 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
     elif not system_prompt_b:
         st.error("❌ 找不到此主題的 Type B 生成提示詞！")
     else:
-        with st.spinner("✉️ AI 正在以非暴力溝通架構生成溫暖、有呼吸感的回覆..."):
-            try:
-                # 語意搜尋
-                rag_context, rag_results = build_rag_context(parent_message)
+        try:
+            # 語意搜尋
+            rag_context, rag_results = build_rag_context(parent_message)
 
-                prompt_run = system_prompt_b
-                if "{在此貼上家長的訊息}" in prompt_run:
-                    prompt_run = prompt_run.replace("{在此貼上家長的訊息}", parent_message)
-                if "{選填：教師補充背景}" in prompt_run:
-                    prompt_run = prompt_run.replace("{選填：教師補充背景}", context)
+            analysis_response = None
+            if system_prompt_a:
+                with st.spinner("🔍 第一階段：AI 正在深入分析家長訴求與冰山下的情緒 (Type A)..."):
+                    prompt_run_a = system_prompt_a
+                    if "{在此貼上家長的訊息}" in prompt_run_a:
+                        prompt_run_a = prompt_run_a.replace("{在此貼上家長的訊息}", parent_message)
+                    if "{選填：教師補充背景}" in prompt_run_a:
+                        prompt_run_a = prompt_run_a.replace("{選填：教師補充背景}", context)
 
-                full_system_prompt = prompt_run + "\n\n" + knowledge_context
+                    full_system_prompt_a = prompt_run_a + "\n\n" + knowledge_context
+                    if rag_context:
+                        full_system_prompt_a += "\n\n" + rag_context
+
+                    analysis_response = utils.call_llm_api(
+                        provider=provider,
+                        api_key=current_key,
+                        model_name=model_name,
+                        system_prompt=full_system_prompt_a,
+                        user_message=user_message,
+                        base_url=base_url
+                    )
+
+            with st.spinner("✉️ 第二階段：AI 正在融合情境分析，依非暴力溝通架構生成溫暖回覆草稿 (Type B)..."):
+                prompt_run_b = system_prompt_b
+                if "{在此貼上家長的訊息}" in prompt_run_b:
+                    prompt_run_b = prompt_run_b.replace("{在此貼上家長的訊息}", parent_message)
+                if "{選填：教師補充背景}" in prompt_run_b:
+                    prompt_run_b = prompt_run_b.replace("{選填：教師補充背景}", context)
+
+                full_system_prompt_b = prompt_run_b + "\n\n" + knowledge_context
                 if rag_context:
-                    full_system_prompt += "\n\n" + rag_context
+                    full_system_prompt_b += "\n\n" + rag_context
+
+                # 組合 User Message，若有第一階段分析則一併注入
+                if analysis_response:
+                    user_message_b = f"{user_message}\n\n【第一階段 Type A 情境與冰山分析報告參考】：\n{analysis_response}\n\n請依據以上家長訊息、教師背景與第一階段情境分析報告，生成溫暖且符合非暴力溝通三段式結構的回覆草稿。"
+                else:
+                    user_message_b = user_message
 
                 response = utils.call_llm_api(
                     provider=provider,
                     api_key=current_key,
                     model_name=model_name,
-                    system_prompt=full_system_prompt,
-                    user_message=user_message,
+                    system_prompt=full_system_prompt_b,
+                    user_message=user_message_b,
                     base_url=base_url
                 )
-                st.success("✅ 草稿生成完成！")
-                st.markdown("### 💬 AI 建議回覆草稿")
-                st.info("💡 以下草稿已依非暴力溝通三段式結構（同理 -> 事實 -> 解方）生成，無條列式與官方用語。您可直接在下方編輯器微調。")
 
-                edited_response = st.text_area(
-                    "✏️ 編輯與微調回覆：",
-                    value=response,
-                    height=200
-                )
-                st.caption("💡 提示：您可直接點擊編輯框右上角的複製按鈕（滑鼠移過去會顯示），即可貼回 LINE 或聯絡簿。")
+            st.success("✅ 兩階段草稿生成完成！")
+            st.markdown("### 💬 AI 建議回覆草稿")
+            st.info("💡 以下草稿已融合 Type A 冰山診斷與非暴力溝通三段式結構（同理 -> 事實 -> 解方）生成，無條列式與官方用語。您可直接在下方編輯器微調。")
 
-                with st.expander("📚 查看本次 AI 參考的知識庫依據", expanded=False):
-                    st.markdown("**靜態知識庫（主題分類）：**")
-                    st.markdown(knowledge_context)
-                    if rag_results:
-                        st.markdown("---\n**語意搜尋結果（docs/ 文件）：**")
-                        for r in rag_results:
-                            st.markdown(f"**{r['filename']}**（相似度：{1 - r['distance']:.2%}）")
-                            st.text(r["text"][:300] + "..." if len(r["text"]) > 300 else r["text"])
+            edited_response = st.text_area(
+                "✏️ 編輯與微調回覆：",
+                value=response,
+                height=200
+            )
+            st.caption("💡 提示：您可直接點擊編輯框右上角的複製按鈕（滑鼠移過去會顯示），即可貼回 LINE 或聯絡簿。")
 
-            except Exception as e:
-                st.error(f"❌ 呼叫 API 發生錯誤：{str(e)}")
+            if analysis_response:
+                with st.expander("🔍 查看 第一階段 AI 冰山分析報告 (Type A)", expanded=False):
+                    st.markdown(analysis_response)
+
+            with st.expander("📚 查看本次 AI 參考的知識庫依據", expanded=False):
+                st.markdown("**靜態知識庫（主題分類）：**")
+                st.markdown(knowledge_context)
+                if rag_results:
+                    st.markdown("---\n**語意搜尋結果（docs/ 文件）：**")
+                    for r in rag_results:
+                        st.markdown(f"**{r['filename']}**（相似度：{1 - r['distance']:.2%}）")
+                        st.text(r["text"][:300] + "..." if len(r["text"]) > 300 else r["text"])
+
+        except Exception as e:
+            st.error(f"❌ 呼叫 API 發生錯誤：{str(e)}")
 
 # ── 頁尾 ────────────────────────────────────────────────────────────────────────
 st.markdown("---")

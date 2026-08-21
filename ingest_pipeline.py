@@ -288,8 +288,9 @@ def get_summary_path(source_filepath: str, summaries_dir: str) -> str:
 
 
 def summary_exists(source_filepath: str, summaries_dir: str) -> bool:
-    """檢查某原始文件是否已有對應摘要。"""
-    return os.path.exists(get_summary_path(source_filepath, summaries_dir))
+    """檢查某原始文件是否已有對應且完整的摘要（檔案存在且非 0 byte）。"""
+    path = get_summary_path(source_filepath, summaries_dir)
+    return os.path.isfile(path) and os.path.getsize(path) > 0
 
 
 def list_summary_status(docs_dir: str) -> Dict[str, bool]:
