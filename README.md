@@ -57,6 +57,10 @@
 
 ## 🛠️ 安裝與啟動步驟
 
+> ⚠️ **執行環境限制**：本專案目前僅在 **Windows 11／PowerShell** 環境中驗證與支援。README 中的 Linux／Ubuntu 指令僅供參考，並不代表 Ubuntu 可直接正常執行。
+>
+> 若部署到 **Ubuntu 24.04** 或其他 Linux 環境，請自行處理文件文字提取、字串截斷、LLM reasoning 內容混入及 Stage 1 JSON 解析等相容性問題；Ubuntu 部署不屬於本專案目前的保證範圍。
+
 > 💡 **硬體與模型選型建議**：關於不同設備（RTX 3060 Ti / Mac mini Pro / RTX 5080）的模型推薦與輸出品質比較，請參考 [專案硬體部署與模型選擇建議](deployment_recommendations.md)。
 
 ### 前置作業：遠端 Ollama 安裝 embedding 模型
