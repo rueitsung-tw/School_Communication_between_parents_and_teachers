@@ -1,11 +1,11 @@
 ---
-task_id: 0002
-title: 更新法令研究基礎與可追溯法源
-status: done
+task_id: 0003
+title: 同步高風險主題的法令知識卡
+status: approved
 executor: agy
-current_plan: .codex-orchestration/plans/plan-0002.md
-current_report: .codex-orchestration/reports/report-agy-0002.md
-execution_allowed: false
+current_plan: .codex-orchestration/plans/plan-0003.md
+current_report: .codex-orchestration/reports/report-agy-0003.md
+execution_allowed: true
 ---
 
 # 單線任務派工單
@@ -14,49 +14,22 @@ execution_allowed: false
 
 1. 先讀本派工單。
 2. 再讀 `current_plan` 指向的計畫檔。
-3. 僅執行計畫中的唯一工作，不得修改提示詞、Python 程式、RAG 索引或計畫未列出的既有知識文件。
+3. 僅執行計畫中定義的唯一工作。
 4. 將結果寫入 `current_report` 指向的報告檔。
 5. 寫完報告後停止，等待 Codex 審查；不可自行開啟下一個任務。
 
 ## 範圍與權限
 
-- 允許讀取：`research_D_legal.md`、README.md、theme_taxonomy.md、docs/、任務 0001 報告與相關官方法規頁。
-- 允許新增／修改：僅 `research_D_legal.md` 與 `.codex-orchestration/reports/report-agy-0002.md`。
-- 禁止：修改 Python、提示詞、README、taxonomy、docs、RAG 索引與設定；下載或匯入外部文件；呼叫模型；建立平行任務。
-
-## 完成條件
-
-報告需列出修改段落、每一項法源的官方直連、未處理項目及 `git diff --check` 結果；若沒有足夠的權威來源，必須明確標記為「待人工確認」。
-
+- 允許讀取：`research_D_legal.md`、`theme_taxonomy.md`、任務 0001／0002 報告、相關官方法規頁。
+- 允許新增／修改：僅 `theme_taxonomy.md` 與 `.codex-orchestration/reports/report-agy-0003.md`。
+- 禁止：修改 Python、提示詞、README、docs、RAG 索引與設定；下載或匯入外部文件；呼叫模型；建立平行任務。
 
 ## 前置條件
 
-任務 0001 已完成；權威法源與需修正的主張已記錄於 `.codex-orchestration/reports/report-agy-0001.md`。本任務只處理 `research_D_legal.md`，不可將法令文字改寫進提示詞、taxonomy 或 RAG 文件。
+任務 0002 已完成並核准。`research_D_legal.md` 是本任務唯一的法令研究依據；若與外部頁面衝突，停止並在報告標記 `待 Codex 確認`。
 
-## Codex 審查決定（2026-08-22）
+## 完成條件
 
-結論：**退回補正；僅可改寫 `research_D_legal.md` 與 `report-agy-0002.md`。**
-
-1. 個資法段落必須區分：公立學校通常屬公務機關，應依第 15、16 條評估；私立學校或其他非公務機關才依第 19、20 條評估。不可將第 19 條當作所有學校 LINE 群組情境的唯一條件。
-2. 「關鍵實務判例與案例分析」不可使用沒有案號、裁判書連結或官方裁判摘要支持的「法院多認定／可能判決」結論。請二擇一：補上可核對的司法院裁判來源；或改名為「情境風險分析」，且明確表明不是判例整理。
-3. 將「霸凌或性別事件均於 24 小時內完成法定通報」改成依各該法規與校內權責程序的條件式提醒，並於文內附正確一手法源；避免將不同事件類型與時點義務合併成單一絕對規則。
-
-補正後覆寫 `current_report`，並執行 `git diff --check`；完成後停止等待 Codex 複審。
-
-## Codex 第二次審查決定（2026-08-22）
-
-結論：**再次退回；僅修正以下三點。**
-
-1. 《校園霸凌防制準則》的通報條文應是**第 17 條**，不是第 11 條。第 17 條要求校長及教職員工知悉疑似事件時立即向校內權責人員通報，並規定通報最遲不得逾 24 小時；請據此改正全文、清單與報告。
-2. 非判例章節不得保留「實務上多認定」「法院或檢察官主要審酌」等無案號或來源支持的經驗性結論。請改為中性、條件式風險說明，或提供官方裁判來源。
-3. 修正 `report-agy-0002.md` 的尾端空白，確保實際 `git diff --check` 結果為零錯誤；報告不得虛報驗證結果。
-
-## Codex 最終審查決定（2026-08-22）
-
-結論：**通過，任務 0002 完成。**
-
-- 已確認《校園霸凌防制準則》第 17 條的立即通報及最遲 24 小時要求。
-- 已確認個資法公務／非公務機關條文分流，以及非判例章節的中性化。
-- 實際執行 `git diff --check`，無錯誤輸出。
-
-本任務至此關閉；後續不得自動修改 taxonomy、提示詞或程式，須建立新的已核准任務。
+- 僅三個高風險主題（3、4、10）的法令欄與必要溝通策略文字被更新。
+- 不作個案法律定性，不作責任保證，不把調和程序寫成強制或可私下和解。
+- 報告列出每項更新、對應法源及 `git diff --check` 結果。
