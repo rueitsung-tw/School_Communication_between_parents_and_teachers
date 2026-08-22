@@ -1,7 +1,7 @@
 ---
 task_id: 0004
 title: 所有主題共用的事實與高風險安全核心
-status: approved
+status: rework_required
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0004.md
 current_report: .codex-orchestration/reports/report-agy-0004.md
@@ -29,3 +29,9 @@ execution_allowed: true
 - 每個 Type A／Type B 呼叫都經由同一個可測試的 prompt 組裝函式。
 - 安全核心在主題提示詞與 RAG 內容之前，且任何主題均不可略過。
 - 新測試先失敗後通過；全套 `pytest -q` 與 `git diff --check` 均通過。
+
+## Codex 審查決定（2026-08-22）
+
+結論：**僅退回修正報告證據。**
+
+實際執行 `pytest -q` 的結果是 **13 passed**，但 `report-agy-0004.md` 的 GREEN 全套測試區段誤寫為 **12 passed**。只允許覆寫該報告，將測試計數與實際輸出一致；不得再修改 `app.py`、`utils.py` 或測試檔。修正後停止等待複審。

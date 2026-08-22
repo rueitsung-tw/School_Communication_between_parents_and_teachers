@@ -394,10 +394,11 @@ if btn_col1.button("🔍 分析家長需求 (Type A)", use_container_width=True)
                 if "{選填：教師補充背景}" in prompt_run:
                     prompt_run = prompt_run.replace("{選填：教師補充背景}", context)
 
-                # 組合：靜態知識庫 + 語意搜尋結果
-                full_system_prompt = prompt_run + "\n\n" + knowledge_context
-                if rag_context:
-                    full_system_prompt += "\n\n" + rag_context
+                full_system_prompt = utils.compose_system_prompt(
+                    task_prompt=prompt_run,
+                    knowledge_context=knowledge_context,
+                    rag_context=rag_context
+                )
 
                 response = utils.call_llm_api(
                     provider=provider,
@@ -445,9 +446,11 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
                     if "{選填：教師補充背景}" in prompt_run_a:
                         prompt_run_a = prompt_run_a.replace("{選填：教師補充背景}", context)
 
-                    full_system_prompt_a = prompt_run_a + "\n\n" + knowledge_context
-                    if rag_context:
-                        full_system_prompt_a += "\n\n" + rag_context
+                    full_system_prompt_a = utils.compose_system_prompt(
+                        task_prompt=prompt_run_a,
+                        knowledge_context=knowledge_context,
+                        rag_context=rag_context
+                    )
 
                     analysis_response = utils.call_llm_api(
                         provider=provider,
@@ -465,9 +468,11 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
                 if "{選填：教師補充背景}" in prompt_run_b:
                     prompt_run_b = prompt_run_b.replace("{選填：教師補充背景}", context)
 
-                full_system_prompt_b = prompt_run_b + "\n\n" + knowledge_context
-                if rag_context:
-                    full_system_prompt_b += "\n\n" + rag_context
+                full_system_prompt_b = utils.compose_system_prompt(
+                    task_prompt=prompt_run_b,
+                    knowledge_context=knowledge_context,
+                    rag_context=rag_context
+                )
 
                 # 組合 User Message，若有第一階段分析則一併注入
                 if analysis_response:
