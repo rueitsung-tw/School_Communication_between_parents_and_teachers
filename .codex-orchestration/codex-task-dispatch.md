@@ -43,3 +43,12 @@ execution_allowed: true
 4. **未涵蓋主題 fallback 須符合現況**：目前僅有教師手動 `selected_theme_key` 下拉選擇，沒有自動主題分類。設計應採明確的「00 通用親師溝通情境」手動 fallback（可另提未來自動分類為後續選項），並定義 Type A／B 通用提示詞任一載入失敗時不得呼叫 LLM 的安全失敗分支。
 
 更新報告後再執行 `git diff --check`；如實記錄離退碼與任何行尾提示後停止等待複審。
+
+## Codex 複審：設計完整性補正（僅報告）
+
+只允許修改 `.codex-orchestration/reports/report-agy-0009.md`。請補齊以下兩項，程式一律不得修改：
+
+1. **最小 metadata 契約表**：列出 `trust_level`、`author_type`、`verified_status`、`source_url` 的型別、允許值與預設值；明定只有管理者明確標為 `official` 的來源可為 `verified`，`teacher_case` 與 `external_unverified` 預設／維持 `unverified`。並說明 manifest 的鍵必須使用與現有 `source_fpath` 相同的正規化絕對路徑，否則 `_index_file()` 無法穩定查回來源紀錄。
+2. **manifest 寫入責任與精確改動點**：選定一個最小介面（例如 `RAGEngine.register_source_metadata()`），說明由 `app.py` 的檔案上傳與網址抓取兩條成功路徑在寫入／索引前呼叫它；定義 URL 的 `source_url` 使用教師輸入的 URL，檔案上傳為空字串。將這個介面與相關 `app.py` 區塊納入「精確改動檔名與函式對照表」，並說明直接放入 `docs/`、無 manifest 的檔案為何仍安全降級。
+
+重跑 `git diff --check`，如實記錄結果後停止等待複審。
