@@ -1,11 +1,11 @@
 ---
 task_id: 0002
 title: 更新法令研究基礎與可追溯法源
-status: rework_required
+status: done
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0002.md
 current_report: .codex-orchestration/reports/report-agy-0002.md
-execution_allowed: true
+execution_allowed: false
 ---
 
 # 單線任務派工單
@@ -50,3 +50,13 @@ execution_allowed: true
 1. 《校園霸凌防制準則》的通報條文應是**第 17 條**，不是第 11 條。第 17 條要求校長及教職員工知悉疑似事件時立即向校內權責人員通報，並規定通報最遲不得逾 24 小時；請據此改正全文、清單與報告。
 2. 非判例章節不得保留「實務上多認定」「法院或檢察官主要審酌」等無案號或來源支持的經驗性結論。請改為中性、條件式風險說明，或提供官方裁判來源。
 3. 修正 `report-agy-0002.md` 的尾端空白，確保實際 `git diff --check` 結果為零錯誤；報告不得虛報驗證結果。
+
+## Codex 最終審查決定（2026-08-22）
+
+結論：**通過，任務 0002 完成。**
+
+- 已確認《校園霸凌防制準則》第 17 條的立即通報及最遲 24 小時要求。
+- 已確認個資法公務／非公務機關條文分流，以及非判例章節的中性化。
+- 實際執行 `git diff --check`，無錯誤輸出。
+
+本任務至此關閉；後續不得自動修改 taxonomy、提示詞或程式，須建立新的已核准任務。
