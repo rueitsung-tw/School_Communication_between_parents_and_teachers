@@ -1,7 +1,7 @@
 ---
 task_id: 0009
 title: RAG 來源信任與未涵蓋主題安全降級設計
-status: rework_required
+status: completed
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0009.md
 current_report: .codex-orchestration/reports/report-agy-0009.md
@@ -61,3 +61,7 @@ execution_allowed: true
 2. **單一來源真相**：既然設計已指定 `docs/manifest.json` 為信任 metadata 的來源真相，請移除 `ingest_pipeline.py`／摘要 YAML frontmatter 的 `trust_level` 傳遞需求、改動表項目與對應風險緩解。說明摘要索引始終以 `_index_file(source_fpath, material_path)` 的原始 `source_fpath` 查 manifest，故不需要修改摘要流程。
 
 重跑 `git diff --check`，如實記錄後停止等待最終複審。
+
+## Codex 最終驗收
+
+任務 0009 已通過驗收。設計以 `docs/manifest.json` 為來源信任 metadata 的唯一來源真相；明確定義三類來源、預設值、上傳／網址註冊流程、摘要索引傳遞、舊索引安全降級與手動「00 通用」fallback。`git diff --check` 離退碼為 0，僅有 CRLF 轉換提示。
