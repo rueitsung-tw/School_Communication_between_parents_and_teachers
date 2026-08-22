@@ -2,7 +2,7 @@
 
 本系統依據「AI 隱形、教學顯性」理念開發，專為 K-12 國小導師打造。透過將 AI 定位為「幕後工具」，降低親師溝通情緒耗損，減輕教師行政負擔。
 
-**v2.0.0** 起已升級為**語意搜尋 RAG 架構**（ChromaDB + Ollama nomic-embed-text），支援動態新增 PDF / 文字文件，無需重啟即可自動更新知識庫索引。
+**v2.0.0** 起已升級為**語意搜尋 RAG 架構**（ChromaDB + Ollama / llama.cpp nomic-embed-text），支援動態新增 PDF / 文字文件，無需重啟即可自動更新知識庫索引。
 
 ---
 
@@ -63,19 +63,38 @@
 
 > 💡 **硬體與模型選型建議**：關於不同設備（RTX 3060 Ti / Mac mini Pro / RTX 5080）的模型推薦與輸出品質比較，請參考 [專案硬體部署與模型選擇建議](deployment_recommendations.md)。
 
-### 前置作業：遠端 Ollama 安裝 embedding 模型
+### 前置作業：AI 服務與模型準備 (Ollama / llama.cpp)
 
-在遠端 Ollama 伺服器（目前為 `172.20.10.51`）執行：
+本系統支援使用 **Ollama** 或 **llama.cpp (llama-server)** 提供文字生成與向量 Embedding 服務：
+
+#### 🔹 選擇 1：使用 Ollama 部署
+
+在 Ollama 伺服器（預設 Port `11434`）執行以下指令下載模型：
 
 ```bash
+# 下載向量 Embedding 模型
 ollama pull nomic-embed-text
+
+# 下載生成 LLM 模型（依硬體設備選擇）
+ollama pull gemma3:12b
 ```
 
-確認安裝完成：
+#### 🔹 選擇 2：使用 llama.cpp (llama-server) 部署
+
+`llama-server` 為單一模型推論服務，需分別啟動 **LLM 生成模型** 與 **Embedding 向量模型** 兩個獨立進程（ Port 分離）：
+
 ```bash
-ollama list
-# 應看到 nomic-embed-text 出現在清單中
+# 1. 啟動生成模型 LLM 伺服器 (Port 8081)
+./llama-server -m gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf --host 0.0.0.0 --port 8081 -c 8192
+
+# 2. 啟動向量 Embedding 伺服器 (Port 8082，務必加上 --embedding 旗標)
+./llama-server -m nomic-embed-text-v1.5.Q8_0.gguf --host 0.0.0.0 --port 8082 --embedding -c 2048
 ```
+
+> ⚠️ **llama.cpp 部署注意事項**：
+> 1. **`--embedding` 旗標必備**：啟動向量 Embedding 伺服器時，指令務必加上 `--embedding` 旗標，否則系統呼叫 `/v1/embeddings` API 時會報錯。
+> 2. **分離 Port 獨立運行**：`llama-server` 需透過不同 Port（例如 `8081` 與 `8082`）同時運行生成模型與 Embedding 模型。
+> 3. **檔名精確對齊**：`config.json` 中的 `model_name` 與 `embedding_model` 必須寫入與 `llama-server` 載入完全一致的完整 `.gguf` 檔名。
 
 ### 1. 安裝 Python 套件
 
@@ -148,6 +167,10 @@ pip install -r requirements.txt
 
 ### 2. 設定 `config.json`
 
+請根據您後端的 AI 服務（Ollama 或 llama.cpp），修改專案根目錄下的 `config.json` 設定檔：
+
+#### 🔹 方案 A：使用 Ollama 設定 (單一連線埠)
+
 ```json
 {
   "provider": "ollama",
@@ -155,9 +178,41 @@ pip install -r requirements.txt
   "api_key": "ollama",
   "model_name": "gemma3:12b",
   "two_step_ingest": true,
+  "ingest_model": "",
   "admin_password": "你的管理者密碼"
 }
 ```
+> 💡 *說明：若使用 Ollama 且未填寫 `embedding_url` 與 `embedding_model`，系統預設會自動連至 `ollama_url` 並載入 `nomic-embed-text`。*
+
+#### 🔹 方案 B：使用遠端 / 本地 llama.cpp 設定 (雙連線埠與 GGUF 檔名)
+
+```json
+{
+  "provider": "ollama",
+  "ollama_url": "http://你的伺服器IP:8081",
+  "api_key": "ollama",
+  "model_name": "gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
+  "embedding_url": "http://你的伺服器IP:8082",
+  "embedding_model": "nomic-embed-text-v1.5.Q8_0.gguf",
+  "two_step_ingest": true,
+  "ingest_model": "",
+  "admin_password": "你的管理者密碼"
+}
+```
+
+#### 📋 `config.json` 欄位對照說明
+
+| 欄位名稱 | 必填 | 說明 / 設定建議 |
+| :--- | :--- | :--- |
+| `provider` | 是 | API 供應商型態。使用本地/遠端 Ollama 或 llama.cpp 時統一填寫 `"ollama"`。 |
+| `ollama_url` | 是 | LLM 生成模型的服務位址。<br>• Ollama 預設：`http://localhost:11434`<br>• llama.cpp 範例：`http://172.20.10.51:8081` |
+| `api_key` | 是 | API 金鑰。本地/遠端私有部署可維持填寫 `"ollama"`。 |
+| `model_name` | 是 | 生成 LLM 模型名稱。<br>• Ollama：模型 Tag，例如 `"gemma3:12b"`<br>• llama.cpp：精確 `.gguf` 檔名，例如 `"gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf"` |
+| `embedding_url` | 否 | 向量 Embedding 服務位址。<br>• Ollama：可省略，預設共用 `ollama_url`<br>• llama.cpp：帶有 `--embedding` 旗標的伺服器位址，例如 `"http://172.20.10.51:8082"` |
+| `embedding_model` | 否 | 向量 Embedding 模型名稱。<br>• Ollama：可省略，預設使用 `"nomic-embed-text"`<br>• llama.cpp：精確 `.gguf` 檔名，例如 `"nomic-embed-text-v1.5.Q8_0.gguf"` |
+| `two_step_ingest` | 是 | 開啟兩階段智慧摘要 Ingest Pipeline（建議設為 `true`）。 |
+| `ingest_model` | 否 | 兩階段摘要專用的 LLM 模型名稱。留空 `""` 代表自動套用 `model_name`。 |
+| `admin_password` | 是 | 系統管理控制台的防護密碼（預設為 `12345678`）。 |
 
 > ⚠️ **管理者安全提醒**：
 > 系統預設管理者密碼為 `12345678`。初次使用或部署系統前，**請務必編輯 `config.json` 中的 `"admin_password"` 設定為強密碼**，以保護「新增網址」、「上傳文件」與「重建索引」等管理控制功能。
@@ -232,7 +287,7 @@ git log --oneline
 
 ## ⚖️ 隱私聲明
 
-本應用為完全**本地端運作**的服務，所有的家長訊息、教師補充脈絡與 API Key 均在您本地的網頁 session 中處理，直接安全地發送給本地 Ollama 伺服器。
+本應用為完全**本地/私有端運作**的服務，所有的家長訊息、教師補充脈絡與 API Key 均在您本地的網頁 session 中處理，直接安全地發送給私有 Ollama / llama.cpp 伺服器。
 
 **本系統不會在任何雲端伺服器上儲存或紀錄您的任何隱私資料。** ChromaDB 向量資料庫也完全儲存於本機（`.chromadb/` 資料夾）。
 
