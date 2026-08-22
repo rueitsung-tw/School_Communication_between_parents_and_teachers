@@ -148,6 +148,22 @@ def test_manifest_non_dict_root_safely_degrades_and_rejects_overwrite():
             content = f.read()
         assert content == "[]"
 
+def test_register_source_metadata_invalidates_only_index_fingerprint():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        docs_dir = os.path.join(tmpdir, "docs")
+        os.makedirs(docs_dir)
+        engine = RAGEngine("http://unused", docs_dir=docs_dir)
+        source = os.path.join(docs_dir, "new-source.md")
+        normalized = normalize_path(source)
+        engine._source_fingerprints[normalized] = "source-fingerprint"
+        engine._index_fingerprints[normalized] = "old-index-fingerprint"
+
+        assert engine.register_source_metadata(
+            source, "teacher_case", "teacher", "unverified", ""
+        ) is True
+        assert engine._source_fingerprints[normalized] == "source-fingerprint"
+        assert normalized not in engine._index_fingerprints
+
 if __name__ == "__main__":
     test_normalize_path()
     test_import_fitz()
@@ -157,3 +173,4 @@ if __name__ == "__main__":
     test_unregistered_source_uses_safe_default_metadata()
     test_indexed_and_retrieved_chunks_preserve_or_default_source_metadata()
     test_manifest_non_dict_root_safely_degrades_and_rejects_overwrite()
+    test_register_source_metadata_invalidates_only_index_fingerprint()

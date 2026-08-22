@@ -207,13 +207,41 @@ with st.sidebar:
                     accept_multiple_files=True,
                     key="rag_file_uploader"
                 )
+                upload_trust_level = st.selectbox(
+                    "標記檔案來源信任等級：",
+                    options=["official", "teacher_case", "external_unverified"],
+                    format_func=lambda x: {
+                        "official": "官方規章（已核定）",
+                        "teacher_case": "教師個案／經驗（未核定）",
+                        "external_unverified": "外部資料（待人工確認）"
+                    }[x],
+                    key="rag_upload_trust_level"
+                )
+                st.caption("ℹ️ 個案經驗與外部資料僅供親師溝通對話與同理參考，不可作為現行個案事實或法規依據。")
                 if st.button("📥 儲存檔案並更新索引", use_container_width=True, key="btn_save_uploaded"):
                     if uploaded_files:
+                        upload_metadata = {
+                            "official": ("school_admin", "verified"),
+                            "teacher_case": ("teacher", "unverified"),
+                            "external_unverified": ("teacher", "unverified"),
+                        }
+                        author_type, verified_status = upload_metadata[upload_trust_level]
                         saved_count = 0
                         for ufile in uploaded_files:
                             ok, fname, msg = utils.save_uploaded_file(ufile, DOCS_DIR)
                             if ok:
-                                saved_count += 1
+                                saved_path = os.path.join(DOCS_DIR, fname)
+                                metadata_ok = rag.register_source_metadata(
+                                    source_fpath=saved_path,
+                                    trust_level=upload_trust_level,
+                                    author_type=author_type,
+                                    verified_status=verified_status,
+                                    source_url="",
+                                )
+                                if metadata_ok:
+                                    saved_count += 1
+                                else:
+                                    st.error(f"❌ {fname}: 來源 metadata 登記失敗！")
                             else:
                                 st.error(f"❌ {fname}: {msg}")
                         if saved_count > 0:
@@ -235,10 +263,20 @@ with st.sidebar:
                             try:
                                 with open(target_path, "w", encoding="utf-8") as f:
                                     f.write(content_or_msg)
-                                with st.spinner("正在進行向量化與智慧摘要..."):
-                                    rag._sync_index()
-                                st.success(f"✅ 成功抓取網頁並儲存為 `{filename}`！")
-                                st.rerun()
+                                metadata_ok = rag.register_source_metadata(
+                                    source_fpath=target_path,
+                                    trust_level="external_unverified",
+                                    author_type="web_crawl",
+                                    verified_status="unverified",
+                                    source_url=input_url.strip(),
+                                )
+                                if metadata_ok:
+                                    with st.spinner("正在進行向量化與智慧摘要..."):
+                                        rag._sync_index()
+                                    st.success(f"✅ 成功抓取網頁並儲存為 `{filename}`！")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ 網址來源 metadata 登記失敗！")
                             except Exception as e:
                                 st.error(f"❌ 檔案寫入失敗: {e}")
                         else:

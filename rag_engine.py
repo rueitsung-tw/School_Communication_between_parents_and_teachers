@@ -582,6 +582,8 @@ class RAGEngine:
             with open(tmp_path, "w", encoding="utf-8") as f:
                 json.dump(manifest, f, ensure_ascii=False, indent=2)
             os.replace(tmp_path, mpath)
+            normalized_path = normalize_path(source_fpath)
+            self._index_fingerprints.pop(normalized_path, None)
             return True
         except Exception as e:
             print(f"[RAG] ❌ 寫入 manifest 失敗: {e}")
