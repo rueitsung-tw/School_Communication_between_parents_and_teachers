@@ -1,6 +1,6 @@
 ---
 task_id: 0009
-title: RAG 來源信任模型設計與影響盤點
+title: RAG 來源信任與未涵蓋主題安全降級設計
 status: approved
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0009.md
