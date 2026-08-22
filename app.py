@@ -489,16 +489,20 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
                     base_url=base_url
                 )
 
-            st.success("✅ 兩階段草稿生成完成！")
-            st.markdown("### 💬 AI 建議回覆草稿")
-            st.info("💡 以下草稿已融合 Type A 冰山診斷與非暴力溝通（NVC）四步驟內部思維生成，以自然段落表達，無條列式與官方用語。您可直接在下方編輯器微調。")
+            validation_errors = utils.validate_parent_reply(response)
+            if validation_errors:
+                st.warning(f"⚠️ 本次 AI 生成之草稿未符合格式品質規範（原因：{'；'.join(validation_errors)}），未予顯示。請點擊按鈕重新生成。")
+            else:
+                st.success("✅ 兩階段草稿生成完成！")
+                st.markdown("### 💬 AI 建議回覆草稿")
+                st.info("💡 以下草稿已融合 Type A 冰山診斷與非暴力溝通（NVC）四步驟內部思維生成，以自然段落表達，無條列式與官方用語。您可直接在下方編輯器微調。")
 
-            edited_response = st.text_area(
-                "✏️ 編輯與微調回覆：",
-                value=response,
-                height=200
-            )
-            st.caption("💡 提示：您可直接點擊編輯框右上角的複製按鈕（滑鼠移過去會顯示），即可貼回 LINE 或聯絡簿。")
+                edited_response = st.text_area(
+                    "✏️ 編輯與微調回覆：",
+                    value=response,
+                    height=200
+                )
+                st.caption("💡 提示：您可直接點擊編輯框右上角的複製按鈕（滑鼠移過去會顯示），即可貼回 LINE 或聯絡簿。")
 
             if analysis_response:
                 with st.expander("🔍 查看 第一階段 AI 冰山分析報告 (Type A)", expanded=False):

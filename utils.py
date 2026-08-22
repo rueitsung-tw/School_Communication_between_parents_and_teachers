@@ -303,6 +303,47 @@ def compose_system_prompt(task_prompt: str, knowledge_context: str = "", rag_con
         parts.append(rag_context.strip())
     return "\n\n".join(parts)
 
+def validate_parent_reply(reply: str) -> List[str]:
+    """
+    驗證 Type B 草稿輸出格式。
+    純函式檢查：
+    1. 草稿不可為空白。
+    2. 草稿段落數須恰為 2 至 3 段（以空白行分隔）。
+    3. 不得包含可見 NVC 步驟標題（如 觀察：、感受：、需要：、請求：、下一步：及其全半形與括號變體）。
+    4. 不得包含段首條列或數字編號。
+    回傳違規原因清單（List[str]）；合格回傳空清單 []。
+    """
+    errors = []
+
+    if not reply or not reply.strip():
+        return ["草稿內容不可為空白"]
+
+    cleaned = reply.strip()
+
+    # 以連續換行（中間可含空白）切割段落
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", cleaned) if p.strip()]
+
+    if len(paragraphs) < 2 or len(paragraphs) > 3:
+        errors.append(f"草稿段落數須為 2 至 3 段（目前為 {len(paragraphs)} 段）")
+
+    # 檢查 NVC 可見標題
+    nvc_header_pattern = re.compile(
+        r"(?:^|\n)\s*(?:【|\[|\d+[\.\、]\s*|[一二三四]\、)?\s*(?:觀察|感受|需要|請求|下一步)\s*(?:】|\]|[:：]|\s|$)"
+    )
+
+    if nvc_header_pattern.search(cleaned):
+        errors.append("草稿不可包含可見的 NVC 步驟標題（如『觀察：』、『感受：』、『【需要】』等）")
+
+    # 檢查條列或編號 (段首符號)
+    list_marker_pattern = re.compile(
+        r"(?:^|\n)\s*(?:[-*•◦▪]\s+|\d+[\.\)]\s+|\(\d+\)\s+|[一二三四五六七八九十]+[\、\.]\s*)"
+    )
+
+    if list_marker_pattern.search(cleaned):
+        errors.append("草稿不可包含段首條列符號或數字編號（如『1. 』、『- 』、『• 』等）")
+
+    return errors
+
 def call_llm_api(
     provider: str,
     api_key: str,

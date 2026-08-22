@@ -1,7 +1,7 @@
 ---
 task_id: 0007
 title: 建立 Type B 草稿格式品質關卡
-status: approved
+status: rework_required
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0007.md
 current_report: .codex-orchestration/reports/report-agy-0007.md
@@ -34,3 +34,13 @@ execution_allowed: true
 - `utils.validate_parent_reply` 以純函式檢查：空白、段落數、可見 NVC 標題與條列／編號。
 - Type B 草稿未通過時不會顯示原草稿或成功訊息，只提示重新生成；通過時保留現有顯示行為。
 - 新測試先 RED 後 GREEN，`pytest -q` 與 `git diff --check` 均通過。
+
+## Codex 複審：小範圍補正後再驗收
+
+僅允許修改 `utils.py`、`test_response_contract.py` 與 `report-agy-0007.md`：
+
+1. 新增實際含 `-` 或 `•` 段首項目符號的測試，並確認其回傳條列／編號違規原因；不可僅以數字編號替代此覆蓋。
+2. 使 NVC 標題檢查與文件說明一致：要嘛實作並測試常見的全／半形括號標題變體（如 `【需要】`、`[請求]`），要嘛縮減函式 docstring 與報告的宣稱；採前者為優先。
+3. 重跑專屬測試、`pytest -q` 與 `git diff --check`，將補正與實際輸出寫入報告後停止。
+
+不得修改 `app.py` 或其他任何檔案。
