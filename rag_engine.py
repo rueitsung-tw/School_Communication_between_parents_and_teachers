@@ -32,10 +32,14 @@ if sys.platform == "win32":
 
 def _import_fitz():
     try:
-        import fitz
+        import pymupdf as fitz
         return fitz
     except ImportError:
-        return None
+        try:
+            import fitz
+            return fitz
+        except ImportError:
+            return None
 
 def _import_chromadb():
     try:
@@ -606,15 +610,35 @@ class RAGEngine:
             return
 
         engine_ref = self
-        summaries_abs = os.path.normpath(
+        summaries_abs = normalize_path(
             os.path.join(self.docs_dir, SUMMARIES_DIR_NAME)
         )
 
         class _Handler(FileSystemEventHandler):
+            def __init__(self):
+                super().__init__()
+                self._timer = None
+                self._timer_lock = threading.Lock()
+
             @staticmethod
             def _is_summaries(path: str) -> bool:
-                """#3 修正：判斷事件路徑是否在 summaries/ 下，是則忽略。"""
-                return os.path.normpath(path).startswith(summaries_abs)
+                """正確正規化路徑並雙重檢查 summaries/ 子目錄」"""
+                norm_path = normalize_path(path)
+                if norm_path.startswith(summaries_abs):
+                    return True
+                return SUMMARIES_DIR_NAME in Path(norm_path).parts
+
+            def _debounced_sync(self):
+                with self._timer_lock:
+                    if self._timer is not None:
+                        self._timer.cancel()
+                    self._timer = threading.Timer(1.5, self._trigger_sync)
+                    self._timer.daemon = True
+                    self._timer.start()
+
+            def _trigger_sync(self):
+                if not engine_ref._sync_in_progress:
+                    engine_ref._sync_index()
 
             def on_created(self, event):
                 if (not event.is_directory
@@ -623,7 +647,7 @@ class RAGEngine:
                     if engine_ref._sync_in_progress:
                         return
                     print(f"[RAG] 🆕 新檔案：{event.src_path}")
-                    engine_ref._sync_index()
+                    self._debounced_sync()
 
             def on_modified(self, event):
                 if (not event.is_directory
@@ -632,7 +656,7 @@ class RAGEngine:
                     if engine_ref._sync_in_progress:
                         return
                     print(f"[RAG] 🔄 檔案更新：{event.src_path}")
-                    engine_ref._sync_index()
+                    self._debounced_sync()
 
             def on_deleted(self, event):
                 if (not event.is_directory
@@ -640,7 +664,7 @@ class RAGEngine:
                     if engine_ref._sync_in_progress:
                         return
                     print(f"[RAG] 🗑️ 檔案刪除：{event.src_path}")
-                    engine_ref._sync_index()
+                    self._debounced_sync()
 
         os.makedirs(self.docs_dir, exist_ok=True)
         self._observer = Observer()

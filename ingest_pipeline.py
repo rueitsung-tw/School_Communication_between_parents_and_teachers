@@ -34,7 +34,8 @@ if sys.platform == "win32":
 # ── 常數 ──────────────────────────────────────────────────────────────────────
 
 SUMMARIES_DIR_NAME = "summaries"   # 在 docs/ 下的子目錄名稱
-MAX_TEXT_FOR_INGEST = 8_000        # 傳給 LLM 的最大字元數（降低門檻以防 context window 超限）
+MAX_TEXT_FOR_INGEST = 6_000        # 為 Stage 1 的 JSON 回覆保留 context window 空間
+MAX_STAGE1_OUTPUT_TOKENS = 1_200   # 避免輸入截斷後仍因輸出預留不足而被拒絕
 
 # ── 文字清洗 ──────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,7 @@ def _call_ollama(
             {"role": "user", "content": user_message}
         ],
         "temperature": temperature,
+        "max_tokens": MAX_STAGE1_OUTPUT_TOKENS,
         "stream": False
     }).encode("utf-8")
 
@@ -200,11 +202,17 @@ def analyze_document(
     if not raw:
         return None
 
-    # 嘗試解析 JSON（LLM 有時會夾帶 ```json ... ``` 包裝）
+    # 嘗試解析 JSON（LLM 有時會夾帶 ```json ... ``` 或前後說明文字）
     raw = raw.strip()
     if raw.startswith("```"):
         lines = raw.split("\n")
         raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+    # 擷取第一個完整 JSON 物件，避免模型在 JSON 前後加說明導致整體解析失敗。
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start >= 0 and end > start:
+        raw = raw[start:end + 1]
 
     try:
         return json.loads(raw)
