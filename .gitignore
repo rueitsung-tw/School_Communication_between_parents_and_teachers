@@ -21,6 +21,7 @@ ENV/
 
 # LLM 自動生成的摘要（各環境自行重建）
 docs/summaries/
+docs/manifest.json
 
 # Streamlit 快取
 .streamlit/

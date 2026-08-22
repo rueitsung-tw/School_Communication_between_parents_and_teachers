@@ -66,6 +66,16 @@ EMBED_MODEL = "nomic-embed-text"
 COLLECTION_NAME = "parent_teacher_rag"
 SUMMARIES_DIR_NAME = "summaries"   # docs/ 下的摘要子目錄，由 ingest_pipeline 生成
 
+SOURCE_TRUST_DEFAULT = {
+    "trust_level": "external_unverified",
+    "author_type": "web_crawl",
+    "verified_status": "unverified",
+    "source_url": "",
+}
+SOURCE_TRUST_LEVELS = {"official", "teacher_case", "external_unverified"}
+SOURCE_AUTHOR_TYPES = {"moe_official", "school_admin", "teacher", "web_crawl"}
+SOURCE_VERIFIED_STATUSES = {"verified", "unverified"}
+
 _SCRIPT_DIR = Path(__file__).parent
 DB_PATH = str(_SCRIPT_DIR / ".chromadb")
 DOCS_DIR = str(_SCRIPT_DIR / "docs")
@@ -498,6 +508,84 @@ class RAGEngine:
         except Exception:
             return "gemma3:12b"
 
+    def _manifest_path(self) -> str:
+        return os.path.join(self.docs_dir, "manifest.json")
+
+    def _get_source_metadata(self, source_fpath: str) -> Dict[str, str]:
+        metadata = dict(SOURCE_TRUST_DEFAULT)
+        try:
+            with open(self._manifest_path(), encoding="utf-8") as f:
+                manifest = json.load(f)
+            stored = manifest.get(normalize_path(source_fpath), {})
+        except (OSError, json.JSONDecodeError):
+            return metadata
+        if not isinstance(stored, dict):
+            return metadata
+        trust_level = stored.get("trust_level", metadata["trust_level"])
+        author_type = stored.get("author_type", metadata["author_type"])
+        verified_status = stored.get("verified_status", metadata["verified_status"])
+        source_url = stored.get("source_url", metadata["source_url"])
+        if trust_level not in SOURCE_TRUST_LEVELS or author_type not in SOURCE_AUTHOR_TYPES:
+            return metadata
+        if verified_status not in SOURCE_VERIFIED_STATUSES:
+            return metadata
+        if trust_level != "official" and verified_status != "unverified":
+            return metadata
+        return {
+            "trust_level": trust_level,
+            "author_type": author_type,
+            "verified_status": verified_status,
+            "source_url": source_url if isinstance(source_url, str) else ""
+        }
+
+    def register_source_metadata(
+        self,
+        source_fpath: str,
+        trust_level: str = "external_unverified",
+        author_type: str = "web_crawl",
+        verified_status: str = "unverified",
+        source_url: str = "",
+    ) -> bool:
+        if trust_level not in SOURCE_TRUST_LEVELS:
+            return False
+        if author_type not in SOURCE_AUTHOR_TYPES:
+            return False
+        if verified_status not in SOURCE_VERIFIED_STATUSES:
+            return False
+        if trust_level != "official" and verified_status != "unverified":
+            return False
+
+        mpath = self._manifest_path()
+        manifest = {}
+        if os.path.exists(mpath):
+            try:
+                with open(mpath, "r", encoding="utf-8") as f:
+                    manifest = json.load(f)
+            except Exception:
+                manifest = {}
+
+        manifest[normalize_path(source_fpath)] = {
+            "trust_level": trust_level,
+            "author_type": author_type,
+            "verified_status": verified_status,
+            "source_url": source_url if isinstance(source_url, str) else ""
+        }
+
+        tmp_path = mpath + ".tmp"
+        try:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(manifest, f, ensure_ascii=False, indent=2)
+            os.replace(tmp_path, mpath)
+            return True
+        except Exception as e:
+            print(f"[RAG] ❌ 寫入 manifest 失敗: {e}")
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+            return False
+
     # ── 向量索引 ──────────────────────────────────────────────────────────────
 
     def _index_file(self, source_fpath: str, material_path: str) -> bool:
@@ -530,12 +618,17 @@ class RAGEngine:
         ids = [f"{prefix}_{i}" for i in range(len(valid))]
         docs = [c for c, _ in valid]
         vecs = [e for _, e in valid]
+        source_meta = self._get_source_metadata(source_fpath)
         metas = [{
             "source": source_fpath,           # 永遠指向原始文件（刪除時用此 key）
             "indexed_from": material_path,    # 實際被向量化的材料（摘要或原始）
             "filename": os.path.basename(source_fpath),
             "is_summary": str(is_summary),
-            "chunk_index": i
+            "chunk_index": i,
+            "trust_level": source_meta["trust_level"],
+            "author_type": source_meta["author_type"],
+            "verified_status": source_meta["verified_status"],
+            "source_url": source_meta["source_url"]
         } for i in range(len(valid))]
 
         try:
@@ -561,7 +654,7 @@ class RAGEngine:
     def retrieve(self, query: str, top_k: int = 3) -> List[Dict]:
         """
         語意搜尋，回傳最相關的 top_k 段落。
-        回傳格式：[{"text": str, "filename": str, "is_summary": bool, "distance": float}]
+        回傳格式：[{"text": str, "filename": str, "is_summary": bool, "distance": float, ...}]
         """
         if self._collection is None:
             return []
@@ -593,7 +686,11 @@ class RAGEngine:
                 "source": meta.get("source", ""),
                 "filename": meta.get("filename", ""),
                 "is_summary": meta.get("is_summary", "False") == "True",
-                "distance": round(dist, 4)
+                "distance": round(dist, 4),
+                "trust_level": meta.get("trust_level", SOURCE_TRUST_DEFAULT["trust_level"]),
+                "author_type": meta.get("author_type", SOURCE_TRUST_DEFAULT["author_type"]),
+                "verified_status": meta.get("verified_status", SOURCE_TRUST_DEFAULT["verified_status"]),
+                "source_url": meta.get("source_url", SOURCE_TRUST_DEFAULT["source_url"])
             })
         return output
 
