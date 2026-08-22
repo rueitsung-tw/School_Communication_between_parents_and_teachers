@@ -48,3 +48,12 @@ execution_allowed: true
 6. `.codex-orchestration/reports/report-agy-0008.md`：清除第 3 至 6 行尾端空白，修正前後對照表並如實記錄重跑的驗證輸出。
 
 完成後重跑 `pytest -q` 與 `git diff --check`；後者必須實際離退碼 0、無任何錯誤輸出。更新報告後停止等待複審。
+
+## Codex 複審：僅修正報告交付資訊
+
+只允許修改 `.codex-orchestration/reports/report-agy-0008.md`：
+
+1. 第一行標題的「報告 agy-0005」更正為「報告 agy-0008」。
+2. `git diff --check` 結果如實記錄：離退碼為 0、無格式或空白錯誤；若執行時仍輸出 CRLF 轉換提示，須明確標示為 Git 行尾轉換提示，不得寫成「無任何警告」或「輸出為空」。
+
+不得修改任何提示詞、程式或測試。完成後停止等待最終複審。
