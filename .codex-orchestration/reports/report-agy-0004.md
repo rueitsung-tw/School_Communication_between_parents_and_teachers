@@ -1,4 +1,4 @@
-# 報告 agy-0004：所有主題共用的事實與高風險安全核心
+# 報告 agy-0004：所有主題共用的事實與高風險安全核心（報告補正修正版）
 
 **執行任務 ID**：0004  
 **執行步驟**：唯一步驟 — 新增共用安全核心與 TDD 重構 prompt 組裝路徑  
@@ -14,7 +14,7 @@
 本任務嚴格採 **TDD (Test-Driven Development)** 流程：
 1. **RED 階段**：先建立獨立單元測試 `test_safety_contract.py`，呼叫尚不存在之 `utils.compose_system_prompt` 函式，執行 `pytest -q test_safety_contract.py` 並截取 `AttributeError` 失敗證據。
 2. **GREEN 階段**：在 `utils.py` 實作最小 `compose_system_prompt` 函式與 `SAFETY_CORE` 常數，確保安全核心置於首位；接著在 `app.py` 中將所有 Type A 與 Type B 系統提示詞組裝處重構改呼叫此函式。測試全數綠燈通過。
-3. **REFACTOR 與驗證**：確認 `pytest -q` 全套 12 項測試通過，且 `git diff --check` 為零錯誤。
+3. **REFACTOR 與驗證**：確認 `pytest -q` 全套 13 項測試通過，且 `git diff --check` 為零錯誤。
 
 本任務嚴格遵守權限界線，**僅修改 `utils.py`、`app.py`，並新增 `test_safety_contract.py` 與本報告 `report-agy-0004.md`**，未修改任何提示詞 Markdown、`README.md`、`theme_taxonomy.md`、`docs/`、RAG 索引或既有測試檔。
 
@@ -74,7 +74,7 @@ test_safety_contract.py:32: AttributeError
 ```
 
 ### 2. GREEN 階段與全套測試通過證據
-在 `utils.py` 實作 `compose_system_prompt` 並重構 `app.py` 呼叫點後，執行 `pytest -q`：
+在 `utils.py` 實作 `compose_system_prompt` 並重構 `app.py` 呼叫點後，執行 `pytest -q`（包含新增測試與 11 項既有測試，全套共 13 項）：
 
 ```shell
 $ pytest -q test_safety_contract.py
@@ -82,8 +82,8 @@ $ pytest -q test_safety_contract.py
 2 passed in 0.29s
 
 $ pytest -q
-............                                                             [100%]
-12 passed in 0.52s
+.............                                                            [100%]
+13 passed in 2.29s
 ```
 
 ---
@@ -95,7 +95,7 @@ $ pytest -q
 | `utils.py` | [MODIFY] | 新增 `SAFETY_CORE` 常數與公開組裝函式 `compose_system_prompt` |
 | `app.py` | [MODIFY] | 將 Type A 與 Type B 第一／第二階段系統提示詞組裝處重構為呼叫 `utils.compose_system_prompt` |
 | `test_safety_contract.py` | [NEW] | 新增安全核心與組裝順序單元測試 |
-| `.codex-orchestration/reports/report-agy-0004.md` | [NEW] | 本任務執行報告 |
+| `.codex-orchestration/reports/report-agy-0004.md` | [NEW] | 本任務執行報告（補正 13 passed 修正版） |
 
 ---
 
@@ -124,4 +124,4 @@ Untracked files:
 
 ---
 
-*任務 0004 執行完畢，報告已寫入，停止執行，等待 Codex 審查。*
+*任務 0004 報告補正執行完畢，報告已覆寫，停止執行，等待 Codex 審查。*

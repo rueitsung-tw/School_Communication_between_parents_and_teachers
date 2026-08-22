@@ -1,37 +1,30 @@
 ---
-task_id: 0004
-title: 所有主題共用的事實與高風險安全核心
-status: rework_required
+task_id: 0005
+title: 將 NVC 四步驟落實至所有 Type B 回覆模組
+status: approved
 executor: agy
-current_plan: .codex-orchestration/plans/plan-0004.md
-current_report: .codex-orchestration/reports/report-agy-0004.md
+current_plan: .codex-orchestration/plans/plan-0005.md
+current_report: .codex-orchestration/reports/report-agy-0005.md
 execution_allowed: true
 ---
 
 # 單線任務派工單
 
-## 執行順序（不可變更）
-
 1. 先讀本派工單。
 2. 再讀 `current_plan` 指向的計畫檔。
-3. 僅執行計畫中定義的唯一工作。
+3. 僅執行計畫中的唯一工作。
 4. 將結果寫入 `current_report` 指向的報告檔。
 5. 寫完報告後停止，等待 Codex 審查；不可自行開啟下一個任務。
 
 ## 範圍與權限
 
-- 允許讀取：`app.py`、`utils.py`、`test_prompts_loader.py`、`research_D_legal.md`、`theme_taxonomy.md`、`prompts/`、任務 0001 至 0003 報告。
-- 允許新增／修改：僅 `utils.py`、`app.py`、`test_safety_contract.py` 與 `.codex-orchestration/reports/report-agy-0004.md`。
-- 禁止：修改提示詞 Markdown、README、taxonomy、docs、RAG 索引、設定檔、既有測試檔；下載或匯入外部文件；呼叫模型；建立平行任務。
+- 允許讀取：README.md、`prompts/`、`utils.py`、任務 0004 報告。
+- 允許新增／修改：僅 README.md、`prompts/*.md` 與 `.codex-orchestration/reports/report-agy-0005.md`。
+- 禁止：修改 Python、測試、taxonomy、research、docs、RAG 索引與設定；下載或匯入外部文件；呼叫模型；建立平行任務。
 
 ## 完成條件
 
-- 每個 Type A／Type B 呼叫都經由同一個可測試的 prompt 組裝函式。
-- 安全核心在主題提示詞與 RAG 內容之前，且任何主題均不可略過。
-- 新測試先失敗後通過；全套 `pytest -q` 與 `git diff --check` 均通過。
-
-## Codex 審查決定（2026-08-22）
-
-結論：**僅退回修正報告證據。**
-
-實際執行 `pytest -q` 的結果是 **13 passed**，但 `report-agy-0004.md` 的 GREEN 全套測試區段誤寫為 **12 passed**。只允許覆寫該報告，將測試計數與實際輸出一致；不得再修改 `app.py`、`utils.py` 或測試檔。修正後停止等待複審。
+- README 與全部 11 個 Type B 模組一致地採 NVC 四步驟。
+- 對家長的成稿仍是自然段落，沒有強制輸出「觀察／感受／需要／請求」標題或條列。
+- 不得以未確認資訊、教師未提供的事實、過度承諾或責任承認填補任一步驟。
+- `pytest -q`、`git diff --check` 均通過。
