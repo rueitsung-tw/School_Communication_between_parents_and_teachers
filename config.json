@@ -1,9 +1,9 @@
 {
   "provider": "ollama",
-  "ollama_url": "http://172.20.199.153:8081",
+  "ollama_url": "http://0.0.0.0:8081",
   "api_key": "ollama",
   "model_name": "gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
-  "embedding_url": "http://172.20.199.153:8082",
+  "embedding_url": "http://0.0.0.0:8082",
   "embedding_model": "nomic-embed-text-v1.5.Q8_0.gguf",
   "two_step_ingest": true,
   "ingest_model": "",
