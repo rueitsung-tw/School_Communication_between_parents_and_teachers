@@ -374,7 +374,9 @@ def build_rag_context(query: str) -> tuple[str, list]:
 
     lines = ["【語意搜尋知識庫參考段落（Top-3 最相關）】"]
     for i, r in enumerate(results, 1):
-        lines.append(f"\n--- 段落 {i}（來源：{r['filename']}，相似度：{1 - r['distance']:.2%}）---")
+        summary = utils.format_rag_trust_summary(r)
+        lines.append(f"\n--- 段落 {i}（來源：{r['filename']}｜{summary}｜相似度：{1 - r['distance']:.2%}）---")
+        lines.append(utils.format_rag_trust_badge(r))
         lines.append(r["text"])
     return "\n".join(lines), results
 
@@ -461,7 +463,8 @@ if btn_col1.button("🔍 分析家長需求 (Type A)", use_container_width=True)
                     if rag_results:
                         st.markdown("---\n**語意搜尋結果（docs/ 文件）：**")
                         for r in rag_results:
-                            st.markdown(f"**{r['filename']}**（相似度：{1 - r['distance']:.2%}）")
+                            summary = utils.format_rag_trust_summary(r)
+                            st.markdown(f"**{r['filename']}**（{summary}｜相似度：{1 - r['distance']:.2%}）")
                             st.text(r["text"][:300] + "..." if len(r["text"]) > 300 else r["text"])
 
             except Exception as e:
@@ -557,7 +560,8 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
                 if rag_results:
                     st.markdown("---\n**語意搜尋結果（docs/ 文件）：**")
                     for r in rag_results:
-                        st.markdown(f"**{r['filename']}**（相似度：{1 - r['distance']:.2%}）")
+                        summary = utils.format_rag_trust_summary(r)
+                        st.markdown(f"**{r['filename']}**（{summary}｜相似度：{1 - r['distance']:.2%}）")
                         st.text(r["text"][:300] + "..." if len(r["text"]) > 300 else r["text"])
 
         except Exception as e:

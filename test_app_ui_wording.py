@@ -42,3 +42,14 @@ def test_app_ui_admin_panel_has_source_trust_registration():
     assert 'verified_status="unverified"' in url_tab
     assert "source_url=input_url.strip()" in url_tab
     assert url_tab.index("rag.register_source_metadata(") < url_tab.index("rag._sync_index()")
+
+def test_app_ui_rag_context_and_views_have_trust_formatting():
+    app_path = os.path.join(os.path.dirname(__file__), "app.py")
+    assert os.path.exists(app_path), "app.py 檔案不存在"
+
+    with open(app_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "utils.format_rag_trust_summary(r)" in content
+    assert "utils.format_rag_trust_badge(r)" in content
+    assert content.count("utils.format_rag_trust_summary(r)") >= 3

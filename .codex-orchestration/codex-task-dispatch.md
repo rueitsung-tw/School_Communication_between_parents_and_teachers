@@ -1,7 +1,7 @@
 ---
 task_id: 0012
 title: RAG 信任標示與提示詞邊界
-status: approved
+status: rework_required
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0012.md
 current_report: .codex-orchestration/reports/report-agy-0012.md
@@ -36,3 +36,10 @@ execution_allowed: true
 - RAG context 的每一段包含信任摘要與 Trust Badge；兩處教師檢視清單也顯示信任摘要。
 - `SAFETY_CORE` 明確禁止把教師經驗當成本案已知事實，或把外部未核定資料直接引用為法令／校規，且仍優先於 RAG context。
 - 專屬與全套 pytest 均通過，`git diff --check` 離退碼為 0。
+
+## Codex 報告補正（不得改程式）
+
+1. 只讀取本派工單與 `.codex-orchestration/reports/report-agy-0012.md`。
+2. 不得修改 `utils.py`、`app.py`、測試或任何其他檔案；只可修改 `report-agy-0012.md`。
+3. 重新執行 `pytest -q`、`git diff --check`、`git status --short`；將全套測試結果由錯誤的 `32 passed` 更正為當前實際輸出，並如實記錄當前 status。
+4. 完成後停止，等待 Codex 最終驗收。
