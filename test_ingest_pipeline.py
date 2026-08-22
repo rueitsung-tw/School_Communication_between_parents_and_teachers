@@ -1,6 +1,12 @@
 import ingest_pipeline
 
 
+def test_normalize_text_for_llm_unifies_newlines_and_unicode():
+    text = "A\r\nB\r\n\u0065\u0301"
+
+    assert ingest_pipeline.normalize_text_for_llm(text) == "A\nB\né"
+
+
 def test_truncate_for_ingest_prefers_sentence_boundary():
     text = "甲" * 3200 + "。" + "乙" * 1200
 

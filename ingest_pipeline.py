@@ -52,6 +52,14 @@ def clean_text_for_llm(text: str) -> str:
     return text
 
 
+def normalize_text_for_llm(text: str) -> str:
+    """統一不同作業系統的換行與 Unicode 表現。"""
+    import unicodedata
+
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return unicodedata.normalize("NFC", text)
+
+
 def truncate_for_ingest(text: str, limit: int) -> str:
     """在限制長度內截斷文字，優先保留完整句子。"""
     if len(text) <= limit:
@@ -165,8 +173,26 @@ def _call_ollama(
         )
         try:
             with urllib.request.urlopen(req, timeout=180) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                return data["choices"][0]["message"]["content"].strip()
+                response_body = resp.read().decode("utf-8", errors="replace")
+                print(
+                    f"[Ingest] 🔎 LLM response：http={resp.status}, "
+                    f"chars={len(response_body)}, preview={response_body[:300]!r}"
+                )
+                if not response_body.strip():
+                    raise RuntimeError("LLM 回傳空內容")
+
+                data = json.loads(response_body)
+                choices = data.get("choices") or []
+                if not choices:
+                    raise RuntimeError(f"LLM 回應缺少 choices：{response_body[:500]}")
+
+                message = choices[0].get("message") or {}
+                content = message.get("content")
+                if not content:
+                    raise RuntimeError(
+                        f"LLM 回應缺少 message.content：{response_body[:500]}"
+                    )
+                return content.strip()
         except urllib.error.HTTPError as e:
             error_body = e.read().decode("utf-8", errors="ignore")
             msg = f"HTTP Error {e.code}: {e.reason}"
@@ -202,7 +228,7 @@ def analyze_document(
     失敗時回傳 None。
     """
     # 進行文字清洗（移除控制字元與不可列印字元）
-    cleaned = clean_text_for_llm(text)
+    cleaned = normalize_text_for_llm(clean_text_for_llm(text))
 
     # 截斷過長的文字（避免超過 context window）
     truncated = truncate_for_ingest(cleaned, MAX_TEXT_FOR_INGEST)
@@ -210,6 +236,12 @@ def analyze_document(
         print(f"[Ingest] ⚠️ 文件超過 {MAX_TEXT_FOR_INGEST} 字，已截斷後送入 Stage 1")
 
     user_msg = STAGE1_USER_TEMPLATE.format(filename=filename, text=truncated)
+    print(
+        f"[Ingest] 🔎 Stage 1 payload：text_sha256="
+        f"{hashlib.sha256(cleaned.encode('utf-8')).hexdigest()}, "
+        f"user_sha256={hashlib.sha256(user_msg.encode('utf-8')).hexdigest()}, "
+        f"chars={len(user_msg)}"
+    )
     raw = _call_ollama(ollama_url, model_name, STAGE1_SYSTEM_PROMPT, user_msg, temperature=0.2, api_key=api_key)
 
     if not raw:
