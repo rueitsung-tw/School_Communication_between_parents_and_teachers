@@ -1,7 +1,7 @@
-# 報告 agy-0009：RAG 來源信任與未涵蓋主題安全降級設計（退回補正二次修正版）
+# 報告 agy-0009：RAG 來源信任與未涵蓋主題安全降級設計（退回補正最終版）
 
 **執行任務 ID**：0009
-**執行步驟**：唯一步驟 — 完成 RAG 來源信任模型、Metadata 資料架構、LLM 邊界、分階段實作規劃與未涵蓋主題安全降級架構設計報告（退回補正版）
+**執行步驟**：唯一步驟 — 完成 RAG 來源信任模型、Metadata 資料架構、LLM 邊界、分階段實作規劃與未涵蓋主題安全降級架構設計報告（補正版）
 **執行者**：agy
 **執行日期**：2026-08-22
 
@@ -48,9 +48,7 @@
 
 ---
 
-## 三、 RAG 三類來源信任模型與來源分類建立機制
-
-為因應未來擴充，設計「三層式來源信任等級（Source Trust Tier）」與明確分類建立機制：
+## 三、 RAG 三類來源信任模型、最小 Metadata 契約與寫入機制
 
 ### 1. 三類來源分類與權威性定義
 
@@ -60,30 +58,50 @@
 | **Tier 2** | `teacher_case` | 教師上傳之個案筆記、過去親師對話紀錄、教學心得、研習講義、班級自訂公約。 | **經驗性參考**：僅供親師溝通同理與對話參考，**絕對不可視為當前處理個案之既定事實或過失證明**。 |
 | **Tier 3** | `external_unverified` | 網路爬蟲抓取文章、網址匯入、部落格、媒體報導、未經核定之外部資料。 | **待確認參考**：必須提示「待人工確認」，Prompt 內禁止 LLM 將其作為法規或校規依據。 |
 
-### 2. 來源分類建立機制（How Classification is Established）
+### 2. 最小 Metadata 欄位契約表（Schema Contract）
 
-檔案新增或抓取時，分類建立規則如下：
+| 欄位名稱 | 資料型態 | 允許值範圍（Enum / Format） | 預設值 | 規則說明與限制 |
+|---|---|---|---|---|
+| `trust_level` | `str` | `"official"` \| `"teacher_case"` \| `"external_unverified"` | `"external_unverified"` | 表示來源信任等級。 |
+| `author_type` | `str` | `"moe_official"` \| `"school_admin"` \| `"teacher"` \| `"web_crawl"` | `"web_crawl"` | 表示作者身份屬性。 |
+| `verified_status` | `str` | `"verified"` \| `"unverified"` | `"unverified"` | **約束規則**：僅管理者明確標為 `official` 的來源可設為 `"verified"`；`teacher_case` 與 `external_unverified` 必須維持 `"unverified"`。 |
+| `source_url` | `str` | 原始 HTTP/HTTPS 網址 或 空字串 `""` | `""` | 檔案上傳預設為 `""`；網址抓取帶入教師輸入之 URL。 |
 
-1. **管理者／教師明確選擇（主要機制）**：
-   - 於側邊欄「📂 知識庫管理」或檔案上傳介面中，提供分類單選組。管理者／教師上傳或匯入檔案至 `docs/` 時，手動指定檔案屬性（`official` 官方規章 / `teacher_case` 教師個案參考）。
-2. **網址抓取與未分類資料預設**：
-   - 透過 URL 自動抓取、或未經指定分類上傳之檔案，預設一律標記為 `external_unverified`（未核定外部資料）。
-3. **歷史未標記資料與 watchdog 檔案系統自動降級**：
-   - 直接複製至 `docs/` 資料夾、未經 UI 手動登記於清單的檔案，或既有 `.chromadb` 中缺少 `trust_level` 的舊 chunk，經 watchdog 監控偵測自動索引時，**一律保守降級為 `external_unverified`**。
-4. **分類禁忌原則**：
-   - 禁止將所有教師上傳一律歸為網址類型，亦禁止僅憑檔名（如 `rules.pdf` 或 `test.md`）自動推斷可信度。
+### 3. Manifest 鍵（Key）正規化要求
 
-### 3. 摘要來源傳遞與 Chroma Metadata 真正寫入機制
+- 於 `docs/manifest.json` 檔案清單中，字典的鍵（Key）**必須使用與 `rag_engine.py` 相同的 `normalize_path(source_fpath)` 正規化絕對路徑**（統一 Windows 磁碟機大寫與斜線格式）。
+- **理由**：若路徑大小寫或斜線不一致（例如 `c:\docs\file.pdf` 與 `C:/docs/file.pdf`），`_index_file()` 在進行字典比對時將無法穩定查回原始來源紀錄。
 
-僅在 `ingest_pipeline.py` 的 YAML frontmatter 寫入 `trust_level` **並不會自動寫入 ChromaDB**。完整的資料流與寫入機制設計如下：
+### 4. 來源分類建立機制與 Manifest 寫入責任
 
-1. **來源清單（Manifest）維護**：
-   - 於 `docs/` 下維護輕量來源清單 `docs/manifest.json`，記錄原始檔案路徑、`trust_level`、`author_type`、`source_url` 等資訊。
-2. **Stage 2 摘要傳承**：
-   - 當 `ingest_pipeline.py` 產生摘要檔 `docs/summaries/<filename>_summary.md` 時，將原始檔案的 `trust_level` 寫入 frontmatter 中備查。
-3. **`_index_file()` 真正寫入 Chroma Chunk Metadata**：
+檔案或網址新增時，最小介面與呼叫路徑如下：
+
+- **最小介面設計**：於 `RAGEngine` 新增公開方法：
+  ```python
+  def register_source_metadata(
+      self,
+      source_fpath: str,
+      trust_level: str = "external_unverified",
+      author_type: str = "web_crawl",
+      verified_status: str = "unverified",
+      source_url: str = ""
+  ) -> bool:
+      """將原始檔案或網址之來源 metadata 以 normalize_path(source_fpath) 為 key 登記至 docs/manifest.json"""
+  ```
+
+- **`app.py` 的呼叫責任**：
+  1. **檔案上傳成功路徑**：當使用者於 Streamlit 介面上傳 `.pdf` / `.txt` / `.md` 儲存至 `docs/` 成功後，由 `app.py` 呼叫 `rag.register_source_metadata(source_fpath=saved_path, trust_level=chosen_level, author_type="school_admin" if chosen_level == "official" else "teacher", verified_status="verified" if chosen_level == "official" else "unverified", source_url="")`。`source_url` 為空字串。
+  2. **網址抓取成功路徑**：當使用者輸入網址抓取內文並存為 `docs/web_crawl_<hash>.txt` 成功後，由 `app.py` 呼叫 `rag.register_source_metadata(source_fpath=saved_path, trust_level="external_unverified", author_type="web_crawl", verified_status="unverified", source_url=input_url)`。`source_url` 帶入教師輸入之 URL。
+
+- **無 Manifest 檔案之安全降級**：
+  - 若使用者未透過 UI 登記，直接複製檔案至 `docs/` 資料夾，watchdog 監控自動觸發 `_index_file(source_fpath, material_path)` 時，`_index_file()` 以 `normalize_path(source_fpath)` 查詢 `docs/manifest.json` 查無紀錄。
+  - 系統實施**防衛性安全降級**：自動以預設值 `trust_level="external_unverified"`, `author_type="web_crawl"`, `verified_status="unverified"`, `source_url=""` 寫入此檔案之 Chroma chunk metadata。
+
+### 5. 摘要來源傳遞與 Chroma Metadata 真正寫入機制
+
+1. **`_index_file()` 真正寫入 Chroma Chunk Metadata**：
    - 於 `rag_engine.py::_index_file(source_fpath, material_path)` 中：
-     - 先以 `source_fpath`（原始檔案路徑）查詢 `docs/manifest.json` 取得該來源之 `trust_level`；若為摘要檔且 manifest 查無紀錄，則解析 `material_path` 摘要檔之 frontmatter。若皆無紀錄，則保守預設 `trust_level = "external_unverified"`。
+     - 以 `normalize_path(source_fpath)` 向 `docs/manifest.json` 查詢取得登記之 metadata。若查無紀錄，採用安全降級預設值。
      - 於建構每個 chunk 的 `metas` 字典時，真正寫入欄位：
        ```python
        metas = [{
@@ -94,13 +112,14 @@
            "chunk_index": i,
            "trust_level": trust_level,            # "official" | "teacher_case" | "external_unverified"
            "author_type": author_type,            # "moe_official" | "school_admin" | "teacher" | "web_crawl"
-           "verified_status": verified_status     # "verified" | "unverified"
+           "verified_status": verified_status,    # "verified" | "unverified"
+           "source_url": source_url               # URL 或 ""
        } for i in range(len(valid))]
        ```
-     - 透過 `self._collection.add(..., metadatas=metas)` 將 `trust_level` 真正持久化儲存於 ChromaDB 中。
+     - 透過 `self._collection.add(..., metadatas=metas)` 將來源信任資料真正持久化寫入 ChromaDB。
      - **重點**：無論 `material_path` 是摘要頁或是原始檔案，所有 chunk 均統一傳承並錨定於 `source_fpath` 原始檔案之信任等級。
 
-### 4. 既有歷史索引向後相容策略（Backward Compatibility）
+### 6. 既有歷史索引向後相容策略（Backward Compatibility）
 
 - **讀取時防衛降級**：在 `rag_engine.py::retrieve()` 讀取 ChromaDB 回傳之 `metadatas` 時，使用 `meta.get("trust_level", "external_unverified")`。若歷史舊 chunk 缺少 `trust_level` 欄位，自動補上 `"external_unverified"` 進行安全降級，確保不發生 `KeyError` 且零破壞相容。
 
@@ -115,15 +134,15 @@
 ```text
 【語意搜尋知識庫參考段落（Top-3 最相關）】
 
---- 段落 1（來源：校園霸凌防制準則.pdf | 信任等級：官方規章）---
+--- 段落 1（來源：校園霸凌防制準則.pdf | 信任等級：官方規章 | 狀態：已核定）---
 【官方規章參考（可作為一般規範依據）】
 ...（段落內容）...
 
---- 段落 2（來源：教師輔導經驗談.md | 信任等級：教師個案參考）---
+--- 段落 2（來源：教師輔導經驗談.md | 信任等級：教師個案參考 | 狀態：未核定）---
 【教師經驗參考（僅供思考輔助，絕對不可當成個案已知事實）】
 ...（段落內容）...
 
---- 段落 3（來源：https://example.com/article | 信任等級：外部未核定資料）---
+--- 段落 3（來源：https://example.com/article | 信任等級：外部未核定資料 | 狀態：未核定）---
 【外部未核定資料（須待人工確認，不得直接引用為法令或校規）】
 ...（段落內容）...
 ```
@@ -145,10 +164,12 @@
 
 | 修改檔案 | 觸及函式 / 區塊 | 預計變更內容 |
 |---|---|---|
-| `ingest_pipeline.py` | `analyze_document()` / Stage 2 產出 | 於 YAML frontmatter 中傳承寫入 `trust_level` |
-| `rag_engine.py` | `_index_file()` / `retrieve()` | 於 `_index_file()` 中將 `trust_level` 寫入 `metas` 並存入 ChromaDB；於 `retrieve()` 中讀取 `trust_level` 並提供舊資料預設值降級 |
-| `app.py` | `build_rag_context()` / 側邊欄 UI | 依 `trust_level` 輸出 Trust Badges，UI 清單展示等級標籤並提供手動等級選擇 |
-| `test_rag_engine.py` | 新增單元測試 | 驗證 `_index_file()` 寫入 `trust_level`、`retrieve()` 檢索與歷史舊資料相容降級 |
+| `ingest_pipeline.py` | `analyze_document()` / Stage 2 產出 | 於 Stage 2 Markdown Frontmatter 中傳承寫入 `trust_level` |
+| `rag_engine.py` | 新增 `register_source_metadata()` 介面 | 提供登記原始檔案 metadata 至 `docs/manifest.json` 之公開方法，key 統一使用 `normalize_path(source_fpath)` |
+| `rag_engine.py` | `_index_file()` / `retrieve()` | 於 `_index_file()` 中向 `manifest.json` 查詢並將 `trust_level`、`author_type`、`verified_status`、`source_url` 寫入 `metas` 並存入 ChromaDB；於 `retrieve()` 中讀取此 4 欄位並提供舊資料預設值降級 |
+| `app.py` | 檔案上傳區塊 / 網址抓取區塊 | 於上傳或抓取成功後呼叫 `rag.register_source_metadata()` 登記；上傳檔案傳入 `source_url=""`，網址抓取傳入教師輸入之 URL |
+| `app.py` | `build_rag_context()` / 側邊欄 UI | 依 `trust_level` 輸出 Trust Badges，UI 清單展示等級標籤與驗證狀態 |
+| `test_rag_engine.py` | 新增單元測試 | 驗證 `register_source_metadata()` 寫入、`_index_file()` 讀取 manifest、`retrieve()` 檢索與未登記檔案安全降級 |
 | `test_safety_contract.py` | 新增單元測試 | 驗證 Tier 2/3 RAG 內容無法覆寫 `SAFETY_CORE` 事實邊界 |
 
 ---
@@ -160,7 +181,7 @@
 2. **風險二：歷史向量資料庫（`.chromadb`）缺 Metadata 欄位導致執行階段 KeyError Crash**
    - *緩解措施*：`retrieve()` 讀取時採 `meta.get("trust_level", "external_unverified")` 進行防衛性讀取，確保舊庫零破壞流暢運作。
 3. **風險三：Stage 2 產生 Markdown 摘要時遺失原始檔案的信任等級**
-   - *緩解措施*：在 `ingest_pipeline.py` 生成摘要頁時，將原始檔之 `trust_level` 寫入摘要頁 YAML frontmatter；`_index_file()` 索引時優先以 `docs/manifest.json` 與 frontmatter 的紀錄為準，確保摘要與原始檔等級一致。
+   - *緩解措施*：在 `ingest_pipeline.py` 生成摘要頁時，將原始檔之 `trust_level` 寫入摘要頁 YAML frontmatter；`_index_file()` 索引時優先以 `docs/manifest.json` 的紀錄為準，確保摘要與原始檔等級一致。
 
 ---
 
@@ -228,4 +249,4 @@ Untracked files:
 
 ---
 
-*任務 0009 補正執行完畢，報告已寫入，停止執行，等待 Codex 審查。*
+*任務 0009 設計完整性補正執行完畢，報告已更新，停止執行，等待 Codex 最終複審。*

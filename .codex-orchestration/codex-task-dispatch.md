@@ -52,3 +52,12 @@ execution_allowed: true
 2. **manifest 寫入責任與精確改動點**：選定一個最小介面（例如 `RAGEngine.register_source_metadata()`），說明由 `app.py` 的檔案上傳與網址抓取兩條成功路徑在寫入／索引前呼叫它；定義 URL 的 `source_url` 使用教師輸入的 URL，檔案上傳為空字串。將這個介面與相關 `app.py` 區塊納入「精確改動檔名與函式對照表」，並說明直接放入 `docs/`、無 manifest 的檔案為何仍安全降級。
 
 重跑 `git diff --check`，如實記錄結果後停止等待複審。
+
+## Codex 複審：最小範圍與實際路徑補正（僅報告）
+
+只允許修改 `.codex-orchestration/reports/report-agy-0009.md`：
+
+1. **網址抓取路徑**：目前 `app.py` 將 `utils.fetch_url_content()` 回傳的 `filename` 組為 `target_path = os.path.join(DOCS_DIR, filename)`，寫入的是抓取器產生的 `web_<title>_<timestamp>.md` 類型檔案；報告不得寫成不存在的 `docs/web_crawl_<hash>.txt`。設計中 `register_source_metadata()` 必須以該實際 `target_path` 為 `source_fpath`，並以 `input_url` 為 `source_url`。
+2. **單一來源真相**：既然設計已指定 `docs/manifest.json` 為信任 metadata 的來源真相，請移除 `ingest_pipeline.py`／摘要 YAML frontmatter 的 `trust_level` 傳遞需求、改動表項目與對應風險緩解。說明摘要索引始終以 `_index_file(source_fpath, material_path)` 的原始 `source_fpath` 查 manifest，故不需要修改摘要流程。
+
+重跑 `git diff --check`，如實記錄後停止等待最終複審。
