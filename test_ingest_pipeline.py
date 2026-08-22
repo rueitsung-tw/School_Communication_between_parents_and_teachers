@@ -12,6 +12,21 @@ def test_stage1_output_budget_and_reasoning_are_configured_for_json():
     assert "不要輸出推理過程" in ingest_pipeline.STAGE1_SYSTEM_PROMPT
 
 
+def test_extract_stage1_json_skips_reasoning_json_fragments():
+    raw = (
+        "<|channel>thought\n"
+        '{"term":"概念","definition":"說明"}\n'
+        '<|channel>final\n'
+        '{"main_topics":["主題"],"key_concepts":[],'
+        '"legal_references":[],"parent_teacher_relevance":"關聯",'
+        '"document_type":"法令條文"}'
+    )
+
+    result = ingest_pipeline.extract_stage1_json(raw)
+
+    assert result["main_topics"] == ["主題"]
+
+
 def test_truncate_for_ingest_prefers_sentence_boundary():
     text = "甲" * 3200 + "。" + "乙" * 1200
 

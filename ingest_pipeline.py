@@ -60,6 +60,29 @@ def normalize_text_for_llm(text: str) -> str:
     return unicodedata.normalize("NFC", text)
 
 
+def extract_stage1_json(raw: str) -> Dict[str, Any]:
+    """從可能混有 reasoning/channel 文字的回覆中擷取完整 Stage 1 JSON。"""
+    decoder = json.JSONDecoder()
+    candidates = []
+    for index, char in enumerate(raw):
+        if char != "{":
+            continue
+        try:
+            value, _ = decoder.raw_decode(raw[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            candidates.append(value)
+
+    required = {"main_topics", "key_concepts", "legal_references"}
+    for candidate in reversed(candidates):
+        if required.issubset(candidate):
+            return candidate
+    if candidates:
+        return candidates[-1]
+    raise json.JSONDecodeError("找不到完整 JSON 物件", raw, 0)
+
+
 def truncate_for_ingest(text: str, limit: int) -> str:
     """在限制長度內截斷文字，優先保留完整句子。"""
     if len(text) <= limit:
@@ -254,14 +277,8 @@ def analyze_document(
         lines = raw.split("\n")
         raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 
-    # 擷取第一個完整 JSON 物件，避免模型在 JSON 前後加說明導致整體解析失敗。
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start >= 0 and end > start:
-        raw = raw[start:end + 1]
-
     try:
-        return json.loads(raw)
+        return extract_stage1_json(raw)
     except json.JSONDecodeError as e:
         print(f"[Ingest] ⚠️ Stage 1 JSON 解析失敗：{e}\n原始輸出：{raw[:300]}")
         return None
