@@ -1,10 +1,10 @@
 ---
-task_id: 0010
-title: RAG 來源信任核心：manifest 與 Chroma metadata
-status: completed
+task_id: 0011
+title: 管理端新增來源分級登記
+status: approved
 executor: agy
-current_plan: .codex-orchestration/plans/plan-0010.md
-current_report: .codex-orchestration/reports/report-agy-0010.md
+current_plan: .codex-orchestration/plans/plan-0011.md
+current_report: .codex-orchestration/reports/report-agy-0011.md
 execution_allowed: true
 ---
 
@@ -13,49 +13,27 @@ execution_allowed: true
 ## 必讀順序（不得省略）
 
 1. 本派工單：`.codex-orchestration/codex-task-dispatch.md`
-2. 實作計畫：`.codex-orchestration/plans/plan-0010.md`
+2. 實作計畫：`.codex-orchestration/plans/plan-0011.md`
 3. 設計依據：`.codex-orchestration/reports/report-agy-0009.md`
-4. 實作檔：`rag_engine.py`
-5. 既有測試：`test_rag_engine.py`、`test_safety_contract.py`
-6. 忽略規則：`.gitignore`
-7. 完整讀畢後，才可撰寫 RED 測試。
+4. 前階段報告：`.codex-orchestration/reports/report-agy-0010.md`
+5. UI 實作：`app.py`
+6. RAG 核心：`rag_engine.py`
+7. 上傳工具：`utils.py`
+8. 既有測試：`test_app_ui_wording.py`、`test_rag_engine.py`、`test_safety_contract.py`
+9. 完整讀畢後，才可撰寫 RED 測試。
 
 ## 執行規則
 
-1. 僅執行 `plan-0010.md` 的 Task 1；不得自行開啟 UI、提示詞或 fallback 的下一階段。
+1. 僅執行 `plan-0011.md` 的 Task 1；不可實作 Trust Badges、RAG prompt 邊界、`00_通用` fallback、UI 主題分類或資料庫遷移。
 2. 必須先 RED、後 GREEN；不得在看到失敗測試前修改 production code。
-3. 允許新增／修改：`rag_engine.py`、`test_rag_engine.py`、`.gitignore`、`.codex-orchestration/reports/report-agy-0010.md`。
-4. 禁止修改：`app.py`、`utils.py`、`ingest_pipeline.py`、README、提示詞、設定、`docs/`、`.chromadb/`、其他測試及任何其他檔案；不得呼叫模型、網路或建立平行任務。
+3. 只允許修改：`app.py`、`rag_engine.py`、`test_app_ui_wording.py`、`test_rag_engine.py`、`.codex-orchestration/reports/report-agy-0011.md`。
+4. 禁止修改：`utils.py`、`ingest_pipeline.py`、README、提示詞、設定、`.gitignore`、`docs/`、`.chromadb/`、其他測試及任何其他檔案；不得呼叫模型、網路或啟動 Streamlit。
 5. 不得建立或提交實際 `docs/manifest.json`；測試只能在暫存目錄建立 manifest。
-6. 寫完 `report-agy-0010.md` 後停止，等待 Codex 審查。
+6. 完成報告後停止，等待 Codex 審查；不得自行啟動 0012。
 
 ## 完成條件
 
-- `RAGEngine.register_source_metadata()` 驗證並原子寫入以正規化絕對路徑為 key 的 manifest。
-- `_index_file()` 與 `retrieve()` 均傳遞四個來源信任欄位；未登記與舊 metadata 都安全降級。
-- `docs/manifest.json` 已列入 `.gitignore`。
+- 管理員的「上傳檔案」分頁可明確選擇 `official`、`teacher_case` 或 `external_unverified`；網址匯入固定登記為 `external_unverified` / `web_crawl` / `unverified`。
+- 兩個成功寫檔路徑都必須在同步索引前成功呼叫 `rag.register_source_metadata()`；登記失敗則顯示錯誤且不得手動呼叫 `rag._sync_index()`。
+- 成功登記會使該檔案的既有索引指紋失效，讓隨後同步能以最新 manifest metadata 重建 chunk；不可重新摘要或呼叫模型。
 - 專屬與全套 pytest 均通過，`git diff --check` 離退碼為 0。
-
-## Codex 複審補正（唯一追加範圍）
-
-### 必讀順序（補正前不得省略）
-
-1. 本派工單：`.codex-orchestration/codex-task-dispatch.md`
-2. 實作計畫：`.codex-orchestration/plans/plan-0010.md`
-3. 執行報告：`.codex-orchestration/reports/report-agy-0010.md`
-4. 實作：`rag_engine.py`
-5. 測試：`test_rag_engine.py`
-
-### 補正要求
-
-1. 先在 `test_rag_engine.py` 新增 RED 測試：若暫存 `manifest.json` 的根節點是合法 JSON 但非物件（至少覆蓋 `[]`），`_get_source_metadata()` 必須回傳四欄安全預設值，且 `register_source_metadata()` 必須回傳 `False`、不得覆寫原 manifest、不得拋出例外。
-2. 確認 RED 失敗後，僅修改 `rag_engine.py`，讓 manifest 根節點不是 JSON object（Python `dict`）時安全處理；不得把既有資料覆寫成空 manifest。
-3. 修正報告第四節誤植的 `report-agy-010.md` 為正確檔名 `report-agy-0010.md`，並新增此次 RED/GREEN、專屬與全套測試、`git diff --check` 與 `git status --short` 的實際結果。
-4. 允許修改僅限：`rag_engine.py`、`test_rag_engine.py`、`.codex-orchestration/reports/report-agy-0010.md`。不得修改 `.gitignore`、任何其他檔案，亦不得建立專案 `docs/manifest.json`。
-5. 完成後停止，等待 Codex 再審。
-
-## Codex 最終複審結果
-
-- 驗收通過：合法 JSON 但非 `dict` 根節點會在讀取時安全降級；登記時拒絕覆寫並回傳 `False`。
-- 驗證：`pytest -q test_rag_engine.py` 為 **8 passed**；`pytest -q` 為 **28 passed**；`git diff --check` 離退碼為 **0**。
-- 0010 已完成。下一任務才可處理 UI 來源登記、信任標章與通用 fallback；不得回頭擴張本任務範圍。
