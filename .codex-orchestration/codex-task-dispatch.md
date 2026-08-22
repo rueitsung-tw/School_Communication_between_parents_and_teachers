@@ -1,7 +1,7 @@
 ---
 task_id: 0006
 title: 同步介面中的 NVC 四步驟說明
-status: approved
+status: completed
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0006.md
 current_report: .codex-orchestration/reports/report-agy-0006.md
@@ -27,3 +27,7 @@ execution_allowed: true
 - `app.py` 不再含「三段式」或「同理 -> 事實 -> 解方」這類舊 NVC 架構說明。
 - 相關 UI 文案明確說明「觀察、感受、需要、請求」僅為內部思維，對家長呈現為自然段落。
 - 新測試先 RED 後 GREEN，且 `pytest -q`、`git diff --check` 均通過。
+
+## Codex 驗收
+
+任務 0006 已通過驗收：四處介面文案已與 NVC 四步驟內化、自然段落規範一致；回歸測試與全套 14 項測試均通過，`git diff --check` 離退碼為 0。

@@ -293,9 +293,9 @@ if theme_id_match:
         if "建議溝通策略" in data:
             st.sidebar.markdown(f"🤝 **建議溝通策略**\n\n{data['建議溝通策略']}")
     else:
-        st.sidebar.info("💡 **通用親師溝通**：適合處理非特定爭議（如例行通知、日常關懷）的溝通情境。建議運用非暴力溝通三段式結構。")
+        st.sidebar.info("💡 **通用親師溝通**：適合處理非特定爭議（如例行通知、日常關懷）的溝通情境。建議將非暴力溝通（NVC）觀察、感受、需要、請求四步驟內化為自然段落。")
 else:
-    st.sidebar.info("💡 **通用親師溝通**：適合處理非特定爭議（如例行通知、日常關懷）的溝通情境。建議運用非暴力溝通三段式結構。")
+    st.sidebar.info("💡 **通用親師溝通**：適合處理非特定爭議（如例行通知、日常關懷）的溝通情境。建議將非暴力溝通（NVC）觀察、感受、需要、請求四步驟內化為自然段落。")
 
 # ── 主標題 ──────────────────────────────────────────────────────────────────────
 st.title("🏫 國小親師溝通小幫手")
@@ -476,7 +476,7 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
 
                 # 組合 User Message，若有第一階段分析則一併注入
                 if analysis_response:
-                    user_message_b = f"{user_message}\n\n【第一階段 Type A 情境與冰山分析報告參考】：\n{analysis_response}\n\n請依據以上家長訊息、教師背景與第一階段情境分析報告，生成溫暖且符合非暴力溝通三段式結構的回覆草稿。"
+                    user_message_b = f"{user_message}\n\n【第一階段 Type A 情境與冰山分析報告參考】：\n{analysis_response}\n\n請依據以上家長訊息、教師背景與第一階段情境分析報告，將非暴力溝通（NVC）觀察、感受、需要、請求內化為自然段落，生成溫暖之回覆草稿。"
                 else:
                     user_message_b = user_message
 
@@ -491,7 +491,7 @@ if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=Tru
 
             st.success("✅ 兩階段草稿生成完成！")
             st.markdown("### 💬 AI 建議回覆草稿")
-            st.info("💡 以下草稿已融合 Type A 冰山診斷與非暴力溝通三段式結構（同理 -> 事實 -> 解方）生成，無條列式與官方用語。您可直接在下方編輯器微調。")
+            st.info("💡 以下草稿已融合 Type A 冰山診斷與非暴力溝通（NVC）四步驟內部思維生成，以自然段落表達，無條列式與官方用語。您可直接在下方編輯器微調。")
 
             edited_response = st.text_area(
                 "✏️ 編輯與微調回覆：",
