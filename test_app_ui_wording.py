@@ -53,3 +53,21 @@ def test_app_ui_rag_context_and_views_have_trust_formatting():
     assert "utils.format_rag_trust_summary(r)" in content
     assert "utils.format_rag_trust_badge(r)" in content
     assert content.count("utils.format_rag_trust_summary(r)") >= 3
+
+def test_app_ui_fallback_mode_and_prompt_guards():
+    app_path = os.path.join(os.path.dirname(__file__), "app.py")
+    assert os.path.exists(app_path), "app.py 檔案不存在"
+
+    with open(app_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "【未涵蓋主題安全模式】" in content
+    assert "校園性別事件" in content
+    assert "霸凌防制" in content
+    assert "兒少保護" in content
+    assert "學校法定通報與權責程序" in content
+    assert 'if "00_通用" in k:' in content
+
+    generic_guard = 'selected_theme_key == "00_通用" and (not system_prompt_a or not system_prompt_b)'
+    assert content.count(generic_guard) == 2
+    assert content.count("無法載入通用安全提示詞（Type A 或 Type B 載入失敗），系統已啟動安全保護機制中斷 API 呼叫，禁止無安全提示詞呼叫 API。請檢查 prompts/00_通用_*.md 檔案。") == 2

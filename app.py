@@ -319,6 +319,13 @@ selected_theme_key = st.selectbox(
     format_func=lambda x: theme_options[x]
 )
 
+if selected_theme_key == "00_通用":
+    st.info(
+        "ℹ️ **【未涵蓋主題安全模式】**：未在 10 項專用主題中的議題（例如性別平等、霸凌、校安、特殊個案等），"
+        "系統預設切換為「00 通用親師溝通」安全模式處理。涉及「校園性別事件」、「霸凌防制」、「兒少保護」等高風險情境，"
+        "僅提供同理關懷溝通草稿，絕不替代「學校法定通報與權責程序」。"
+    )
+
 # ── 側邊欄：主題知識卡 ─────────────────────────────────────────────────────────
 theme_id_match = re.search(r"(\d+)", selected_theme_key)
 if theme_id_match:
@@ -404,10 +411,11 @@ system_prompt_b = None
 
 if selected_theme_key == "00_通用":
     for k in db_keys:
-        if "TypeA" in k:
-            system_prompt_a = prompts_db[k].get("Type A")
-        elif "TypeB" in k:
-            system_prompt_b = prompts_db[k].get("Type B")
+        if "00_通用" in k:
+            if "TypeA" in k:
+                system_prompt_a = prompts_db[k].get("Type A")
+            elif "TypeB" in k:
+                system_prompt_b = prompts_db[k].get("Type B")
 else:
     if matched_keys:
         system_prompt_a = prompts_db[matched_keys[0]].get("Type A")
@@ -421,7 +429,9 @@ else:
 
 # ── 執行分析 Type A ─────────────────────────────────────────────────────────────
 if btn_col1.button("🔍 分析家長需求 (Type A)", use_container_width=True):
-    if not current_key.strip():
+    if selected_theme_key == "00_通用" and (not system_prompt_a or not system_prompt_b):
+        st.error("❌ 無法載入通用安全提示詞（Type A 或 Type B 載入失敗），系統已啟動安全保護機制中斷 API 呼叫，禁止無安全提示詞呼叫 API。請檢查 prompts/00_通用_*.md 檔案。")
+    elif not current_key.strip():
         st.error("❌ 請在側邊欄輸入 API 金鑰後再執行！")
     elif not parent_message.strip():
         st.warning("⚠️ 請先貼入家長的原始訊息！")
@@ -472,7 +482,9 @@ if btn_col1.button("🔍 分析家長需求 (Type A)", use_container_width=True)
 
 # ── 執行生成 Type B ─────────────────────────────────────────────────────────────
 if btn_col2.button("✉️ 生成回覆草稿 (Type B)", use_container_width=True):
-    if not current_key.strip():
+    if selected_theme_key == "00_通用" and (not system_prompt_a or not system_prompt_b):
+        st.error("❌ 無法載入通用安全提示詞（Type A 或 Type B 載入失敗），系統已啟動安全保護機制中斷 API 呼叫，禁止無安全提示詞呼叫 API。請檢查 prompts/00_通用_*.md 檔案。")
+    elif not current_key.strip():
         st.error("❌ 請在側邊欄輸入 API 金鑰後再執行！")
     elif not parent_message.strip():
         st.warning("⚠️ 請先貼入家長的原始訊息！")
