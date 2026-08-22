@@ -1,7 +1,7 @@
 # 報告 agy-0012：RAG 信任標示與提示詞邊界整合（退回補正版）
 
 **執行任務 ID**：0012
-**執行步驟**：Task 1 — 來源信任 Badge、教師可見摘要與安全核心規則實作（最終報告補正版）
+**執行步驟**：Task 1 — 來源信任 Badge、教師可見摘要與安全核心規則實作（報告格式補正版）
 **執行者**：agy
 **執行日期**：2026-08-22
 
@@ -77,7 +77,7 @@ $ pytest -q test_safety_contract.py test_app_ui_wording.py
 
 ## 四、 範疇控制與未變動說明
 
-- **修改檔案**：報告補正階段僅修改本報告 `report-agy-0012.md`（未改動 `utils.py`、`app.py` 或任何測試檔案）。
+- **修改檔案**：報告格式補正階段僅修改本報告 `report-agy-0012.md`（未改動 `utils.py`、`app.py` 或任何測試檔案）。
 - **未變動檔案**：未修改 `rag_engine.py`、`ingest_pipeline.py`、README、`config.json`、`requirements.txt`、`.gitignore`、提示詞檔或 `docs/`／`.chromadb/` 實體資料庫。
 - **未擴大範圍**：未修改 RAG 檢索邏輯、manifest 格式、管理端上傳 UI、`00_通用` fallback 或主題分類。
 - **無實體 Manifest 提交**：測試完全於記憶體與暫存環境中進行，未留下實體檔案變更。
@@ -98,7 +98,7 @@ $ pytest -q test_safety_contract.py test_app_ui_wording.py
 - **全套測試**：
 ```shell
 $ pytest -q
-................................略 (33 passed)                           [100%]
+.................................                                        [100%]
 33 passed in 0.54s
 ```
 
@@ -120,4 +120,4 @@ $ git status --short
 
 ---
 
-*任務 0012 最終報告補正完成，報告已更新，停止執行，等待 Codex 最終驗收。*
+*任務 0012 報告格式補正完成，報告已更新，停止執行，等待 Codex 最終驗收。*
