@@ -113,6 +113,9 @@ pip install -r requirements.txt
 >     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 >     ```
 >     解鎖後即可正常執行 `.venv\Scripts\Activate.ps1`。
+> * **問題 3：`Could not open requirements file: No such file or directory: 'requirements.txt'`**
+>   * **原因**：當前終端機工作目錄不在 `requirements.txt` 所在的資料夾中（常發生於解壓縮 ZIP 後多出一層同名子資料夾）。
+>   * **解法**：在 PowerShell 執行 `dir` 檢查檔案清單。若看到同名子資料夾，請先執行 `cd 資料夾名稱` 切換進去後再安裝套件。
 
 
 主要相依套件：
