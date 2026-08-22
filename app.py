@@ -227,6 +227,7 @@ with st.sidebar:
                         }
                         author_type, verified_status = upload_metadata[upload_trust_level]
                         saved_count = 0
+                        all_sources_registered = True
                         for ufile in uploaded_files:
                             ok, fname, msg = utils.save_uploaded_file(ufile, DOCS_DIR)
                             if ok:
@@ -241,14 +242,18 @@ with st.sidebar:
                                 if metadata_ok:
                                     saved_count += 1
                                 else:
+                                    all_sources_registered = False
                                     st.error(f"❌ {fname}: 來源 metadata 登記失敗！")
                             else:
+                                all_sources_registered = False
                                 st.error(f"❌ {fname}: {msg}")
-                        if saved_count > 0:
+                        if saved_count > 0 and all_sources_registered:
                             with st.spinner("正在進行向量化與智慧摘要..."):
                                 rag._sync_index()
                             st.success(f"✅ 成功上傳 {saved_count} 個檔案並完成索引！")
                             st.rerun()
+                        elif saved_count > 0 and not all_sources_registered:
+                            st.warning("⚠️ 部分檔案登記失敗，整批已暫緩手動同步索引。已成功儲存之檔案將於下一次同步時自動更新。")
                     else:
                         st.warning("請先選擇要上傳的檔案。")
 

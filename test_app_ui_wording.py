@@ -33,6 +33,8 @@ def test_app_ui_admin_panel_has_source_trust_registration():
     assert '"teacher_case"' in file_tab
     assert '"external_unverified"' in file_tab
     assert "rag.register_source_metadata(" in file_tab
+    assert "all_sources_registered" in file_tab
+    assert "if saved_count > 0 and all_sources_registered:" in file_tab
     assert file_tab.index("rag.register_source_metadata(") < file_tab.index("rag._sync_index()")
     assert "rag.register_source_metadata(" in url_tab
     assert 'trust_level="external_unverified"' in url_tab
