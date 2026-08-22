@@ -1,9 +1,9 @@
-# 報告 agy-0007：建立 Type B 草稿格式品質關卡
+# 報告 agy-0007：建立 Type B 草稿格式品質關卡（退回補正二次修正版）
 
-**執行任務 ID**：0007  
-**執行步驟**：唯一步驟 — 建立 Type B 草稿格式品質驗證器並整合至 `app.py` 顯示前品質關卡  
-**執行者**：agy  
-**執行日期**：2026-08-22  
+**執行任務 ID**：0007
+**執行步驟**：唯一步驟 — 建立 Type B 草稿格式品質驗證器並整合至 `app.py` 顯示前品質關卡（退回補正版）
+**執行者**：agy
+**執行日期**：2026-08-22
 
 ---
 
@@ -23,14 +23,17 @@
 
 ---
 
-## 二、 摘要與執行範疇說明
+## 二、 摘要與小範圍退回補正細節
 
-本報告記錄任務 0007 之 TDD 執行與格式品質關卡實作結果。本任務將 NVC「四步驟僅供內部思考、對家長輸出自然段落」規範，從提示詞約束落實為模型回覆後、顯示前之本地品質檢驗機制。
+本報告記錄任務 0007 之 TDD 執行、品質關卡實作與二次補正結果。
 
-本任務採 **TDD (Test-Driven Development)** 流程：
-1. **RED 階段**：先新增獨立格式測試 `test_response_contract.py`，直接測試尚不存在之 `utils.validate_parent_reply`，執行 `pytest -q test_response_contract.py` 擷取 `AttributeError` 失敗證據。
-2. **GREEN 階段**：在 `utils.py` 實作最小純函式 `validate_parent_reply`；接著在 `app.py` 第二階段 Type B 取得 `response` 後、顯示前加入品質關卡分流。
-3. **REFACTOR 與驗證**：確認 `pytest -q` 全套 21 項測試通過，且 `git diff --check` 為零錯誤。
+### 本次補正重點：
+1. **補齊真正的符號條列測試**：
+   - 於 `test_response_contract.py` 中新增 `test_validate_parent_reply_bullet_points_with_dash_and_bullet()` 測試案例，分別以真正的 `-`（連字號/減號）與 `•`（項目圓點符號）測試段首條列，確認能精準攔截並回傳條列違規原因。
+2. **實作與驗證 NVC 括號標題變體**：
+   - 於 `utils.py` 之 `validate_parent_reply` 強化正則表達式，並於 `test_response_contract.py` 中新增 `test_validate_parent_reply_visible_nvc_headers_with_brackets()` 測試案例，驗證 `【需要】`、`[請求]`、`【觀察】`、`[感受]` 等全/半形中英文括號標題變體皆被嚴格禁止。
+3. **專屬測試與全套測試通過**：
+   - 專屬測試 `test_response_contract.py` 共 9 項單元測試全數通過；全套 `pytest -q` 提升至 23 項測試全綠燈通過。
 
 ---
 
@@ -42,8 +45,8 @@ def validate_parent_reply(reply: str) -> List[str]:
     純函式格式品質驗證契約：
     1. 空白內容檢查：若草稿為空或僅含空白，回傳違規原因。
     2. 段落數檢查：草稿須恰有 2 或 3 個以空白行分隔之非空段落。
-    3. 可見 NVC 標題檢查：不得包含『觀察：』、『感受：』、『【需要】』、『請求：』、『下一步：』等段首或獨立標題。
-    4. 條列或編號檢查：不得包含段首條列符號（-、*、•）或數字編號（1.、(1)、一、）。
+    3. 可見 NVC 標題檢查：不得包含『觀察：』、『感受：』、『【需要】』、『[請求]』等段首或獨立標題及其全/半形括號變體。
+    4. 條列或編號檢查：不得包含段首條列符號（-、*、•、◦、▪）或數字編號（1.、(1)、一、）。
     5. 不檢查、不改寫、不判定任何事實、情緒、法律責任或內容品質。
     回傳：違規原因清單 List[str]（合格時回傳 []）。
     """
@@ -65,32 +68,18 @@ def validate_parent_reply(reply: str) -> List[str]:
 
 ## 五、 TDD 測試證據
 
-### 1. RED 階段測試失敗證據
-在 `utils.py` 尚未實作 `validate_parent_reply` 前，執行 `pytest -q test_response_contract.py`：
-
+### 1. 專屬測試 `test_response_contract.py` 執行結果
 ```shell
 $ pytest -q test_response_contract.py
-FFFFFF                                                                   [100%]
-================──────────────── FAILURES ────────────────────────────────
-_____________ test_validate_parent_reply_valid_two_paragraphs _____________
->       errors = utils.validate_parent_reply(reply)
-E       AttributeError: module 'utils' has no attribute 'validate_parent_reply'
-
-test_response_contract.py:10: AttributeError
-100% Failure - 6 failures in 0.28s
+.........                                                                [100%]
+9 passed in 0.28s
 ```
 
-### 2. GREEN 階段與全套測試通過證據
-實作 `utils.validate_parent_reply` 與 `app.py` 品質關卡分流後，執行全套 `pytest -q`：
-
+### 2. 全套 `pytest -q` 執行結果
 ```shell
-$ pytest -q test_response_contract.py
-.......                                                                  [100%]
-7 passed in 0.28s
-
 $ pytest -q
-.....................                                                    [100%]
-21 passed in 0.52s
+.......................                                                  [100%]
+23 passed in 0.52s
 ```
 
 ---
@@ -99,10 +88,10 @@ $ pytest -q
 
 | 檔案名稱 | 變更類型 | 說明 |
 |---|---|---|
-| `utils.py` | [MODIFY] | 新增純函式 `validate_parent_reply`（草稿格式品質驗證器） |
-| `app.py` | [MODIFY] | 於 Type B 草稿顯示前加入 `validate_parent_reply` 品質關卡分流 |
-| `test_response_contract.py` | [NEW] | 新增 Type B 草稿格式品質驗證單元測試（包含合格 2/3 段、空白、段落數不符、NVC 標題、條列編號等 7 項測試案例） |
-| `.codex-orchestration/reports/report-agy-0007.md` | [NEW] | 本任務執行報告 |
+| `utils.py` | [MODIFY] | 實作並強化純函式 `validate_parent_reply`（包含括號標題變體與符號條列檢查） |
+| `app.py` | [MODIFY] | 於 Type B 草稿顯示前加入 `validate_parent_reply` 品質關卡分流（本次補正未變動） |
+| `test_response_contract.py` | [NEW] | 新增 Type B 草稿格式品質驗證單元測試（共 9 項單元測試，包含合格 2/3 段、空白、單/四段落、NVC 冒號標題、NVC 括號標題 `【需要】`/`[請求]`、數字編號及 `-`/`•` 符號條列） |
+| `.codex-orchestration/reports/report-agy-0007.md` | [NEW] | 本任務執行報告（補正版） |
 
 ---
 
@@ -145,4 +134,4 @@ Untracked files:
 
 ---
 
-*任務 0007 執行完畢，報告已寫入，停止執行，等待 Codex 審查。*
+*任務 0007 補正執行完畢，報告已寫入，停止執行，等待 Codex 審查。*

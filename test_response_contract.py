@@ -50,6 +50,17 @@ def test_validate_parent_reply_visible_nvc_headers():
     assert len(errors) > 0
     assert any("標題" in err or "NVC" in err for err in errors)
 
+def test_validate_parent_reply_visible_nvc_headers_with_brackets():
+    reply = (
+        "【觀察】小明最近坐在第四排。\n\n"
+        "[感受] 理解媽媽心疼與焦慮的心情。\n\n"
+        "【需要】回應學習受重視的需要。\n\n"
+        "[請求] 邀請媽媽觀察一週。"
+    )
+    errors = utils.validate_parent_reply(reply)
+    assert len(errors) > 0
+    assert any("標題" in err or "NVC" in err for err in errors)
+
 def test_validate_parent_reply_bullet_points_or_numbered_list():
     reply = (
         "小明媽媽您好，關於座位的安排說明如下：\n\n"
@@ -60,3 +71,24 @@ def test_validate_parent_reply_bullet_points_or_numbered_list():
     errors = utils.validate_parent_reply(reply)
     assert len(errors) > 0
     assert any("條列" in err or "編號" in err for err in errors)
+
+def test_validate_parent_reply_bullet_points_with_dash_and_bullet():
+    reply_dash = (
+        "小明媽媽您好，關於座位的安排說明如下：\n\n"
+        "- 每四週定期輪換座位\n"
+        "- 參考身高與視力矯正狀況\n\n"
+        "這幾天我會特別留意小明看黑板的情形，隨時歡迎聯繫。"
+    )
+    errors_dash = utils.validate_parent_reply(reply_dash)
+    assert len(errors_dash) > 0
+    assert any("條列" in err or "編號" in err for err in errors_dash)
+
+    reply_bullet = (
+        "小明媽媽您好，關於座位的安排說明如下：\n\n"
+        "• 每四週定期輪換座位\n"
+        "• 參考身高與視力矯正狀況\n\n"
+        "這幾天我會特別留意小明看黑板的情形，隨時歡迎聯繫。"
+    )
+    errors_bullet = utils.validate_parent_reply(reply_bullet)
+    assert len(errors_bullet) > 0
+    assert any("條列" in err or "編號" in err for err in errors_bullet)

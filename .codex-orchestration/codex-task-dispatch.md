@@ -1,7 +1,7 @@
 ---
 task_id: 0007
 title: 建立 Type B 草稿格式品質關卡
-status: rework_required
+status: completed
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0007.md
 current_report: .codex-orchestration/reports/report-agy-0007.md
@@ -44,3 +44,7 @@ execution_allowed: true
 3. 重跑專屬測試、`pytest -q` 與 `git diff --check`，將補正與實際輸出寫入報告後停止。
 
 不得修改 `app.py` 或其他任何檔案。
+
+## Codex 最終驗收
+
+任務 0007 已通過驗收：符號條列、數字編號、NVC 冒號與全／半形括號標題均有真實純函式測試覆蓋；專屬測試 9 項與全套測試 23 項通過，`git diff --check` 離退碼為 0。
