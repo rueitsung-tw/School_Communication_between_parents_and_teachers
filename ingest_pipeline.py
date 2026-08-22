@@ -34,7 +34,7 @@ if sys.platform == "win32":
 # ── 常數 ──────────────────────────────────────────────────────────────────────
 
 SUMMARIES_DIR_NAME = "summaries"   # 在 docs/ 下的子目錄名稱
-MAX_TEXT_FOR_INGEST = 6_000        # 為 Stage 1 的 JSON 回覆保留 context window 空間
+MAX_TEXT_FOR_INGEST = 4_000        # 為 Stage 1 的 JSON 回覆保留 context window 空間
 MAX_STAGE1_OUTPUT_TOKENS = 1_200   # 避免輸入截斷後仍因輸出預留不足而被拒絕
 
 # ── 文字清洗 ──────────────────────────────────────────────────────────────────
@@ -50,6 +50,19 @@ def clean_text_for_llm(text: str) -> str:
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
     text = re.sub(r'[\u200b-\u200d\ufeff]', '', text)
     return text
+
+
+def truncate_for_ingest(text: str, limit: int) -> str:
+    """在限制長度內截斷文字，優先保留完整句子。"""
+    if len(text) <= limit:
+        return text
+
+    cut = text[:limit]
+    boundary = max(cut.rfind(mark) for mark in ("。", "！", "？", "\n"))
+    if boundary >= int(limit * 0.8):
+        cut = cut[:boundary + 1]
+
+    return cut + "\n\n（文件內容已截斷）"
 
 # ── Stage 1：分析提示詞 ────────────────────────────────────────────────────────
 
@@ -192,7 +205,7 @@ def analyze_document(
     cleaned = clean_text_for_llm(text)
 
     # 截斷過長的文字（避免超過 context window）
-    truncated = cleaned[:MAX_TEXT_FOR_INGEST]
+    truncated = truncate_for_ingest(cleaned, MAX_TEXT_FOR_INGEST)
     if len(cleaned) > MAX_TEXT_FOR_INGEST:
         print(f"[Ingest] ⚠️ 文件超過 {MAX_TEXT_FOR_INGEST} 字，已截斷後送入 Stage 1")
 
