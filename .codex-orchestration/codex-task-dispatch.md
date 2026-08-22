@@ -1,7 +1,7 @@
 ---
 task_id: 0011
 title: 管理端新增來源分級登記
-status: rework_required
+status: completed
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0011.md
 current_report: .codex-orchestration/reports/report-agy-0011.md
@@ -62,3 +62,9 @@ execution_allowed: true
 2. 不得修改 `app.py`、測試或任何其他檔案；只可修改 `report-agy-0011.md`。
 3. 重新執行 `pytest -q`、`git diff --check`、`git status --short`，將報告的全套測試結果由錯誤的 `29 passed` 更正為實際輸出，並如實記錄此時狀態中報告檔本身的變更。
 4. 完成後停止，等待 Codex 最終驗收。
+
+## Codex 最終複審結果
+
+- 驗收通過：任一批次上傳失敗即暫緩手動同步；網址固定登記為外部未核定；成功登記會使該來源索引指紋失效。
+- 驗證：`pytest -q test_rag_engine.py test_app_ui_wording.py` 為 **11 passed**；`pytest -q` 為 **30 passed**；`git diff --check` 離退碼為 **0**。
+- 0011 已完成。下一任務才可處理 RAG Trust Badges 與 prompt 邊界，或未涵蓋主題的 `00_通用` fallback；兩者應分開派工。

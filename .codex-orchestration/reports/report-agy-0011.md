@@ -1,7 +1,7 @@
 # 報告 agy-0011：管理端新增來源分級登記與重新索引觸發（退回補正版）
 
 **執行任務 ID**：0011
-**執行步驟**：Task 1 — 管理端新增來源分級 UI 與可靠重新索引觸發實作（補正版）
+**執行步驟**：Task 1 — 管理端新增來源分級 UI 與可靠重新索引觸發實作（最終報告補正版）
 **執行者**：agy
 **執行日期**：2026-08-22
 
@@ -14,8 +14,6 @@
 - [x] 1. `.codex-orchestration/codex-task-dispatch.md`
 - [x] 2. `.codex-orchestration/plans/plan-0011.md`
 - [x] 3. `.codex-orchestration/reports/report-agy-0011.md`
-- [x] 4. `app.py`
-- [x] 5. `test_app_ui_wording.py`
 
 ---
 
@@ -27,7 +25,7 @@
      - `"teacher_case"` → 顯示「教師個案／經驗（未核定）」，對應 `author_type="teacher"`, `verified_status="unverified"`
      - `"external_unverified"` → 顯示「外部資料（待人工確認）」，對應 `author_type="teacher"`, `verified_status="unverified"`
    - 新增警語提示：個案經驗與外部資料僅供溝通參考，不可作為現行個案事實或法規依據。
-   - **多檔批次同步保護（補正）**：新增 `all_sources_registered` 布林旗標。若批次中任一檔案儲存失敗或 `rag.register_source_metadata()` 登記失敗，旗標即設為 `False`；手動呼叫 `rag._sync_index()` 的唯一觸發條件改為 `if saved_count > 0 and all_sources_registered:`。若部分失敗，輸出警示訊息並暫緩整批手動同步，已成功寫入之檔案不刪除並於下一次同步自動處理。
+   - **多檔批次同步保護**：新增 `all_sources_registered` 布林旗標。若批次中任一檔案儲存失敗或 `rag.register_source_metadata()` 登記失敗，旗標即設為 `False`；手動呼叫 `rag._sync_index()` 的唯一觸發條件改為 `if saved_count > 0 and all_sources_registered:`。若部分失敗，輸出警示訊息並暫緩整批手動同步，已成功寫入之檔案不刪除並於下一次同步自動處理。
 
 2. **網址抓取強制外部未核定（`app.py`）**：
    - 於「🌐 輸入網址」成功寫入 `target_path` 後、既有 `_sync_index()` 前，強制呼叫 `rag.register_source_metadata(source_fpath=target_path, trust_level="external_unverified", author_type="web_crawl", verified_status="unverified", source_url=input_url.strip())`。
@@ -74,7 +72,7 @@ $ pytest -q test_rag_engine.py test_app_ui_wording.py
 
 ## 四、 範疇控制與未變動說明
 
-- **修改檔案**：補正階段僅修改 `app.py`、`test_app_ui_wording.py` 與本報告 `report-agy-0011.md`（未改動 `rag_engine.py` 或 `test_rag_engine.py`）。
+- **修改檔案**：報告補正階段僅修改本報告 `report-agy-0011.md`（未改動 `app.py`、`rag_engine.py` 或任何測試檔案）。
 - **未變動檔案**：未修改 `utils.py`、`ingest_pipeline.py`、README、`config.json`、`requirements.txt`、`.gitignore`、提示詞檔或 `docs/`／`.chromadb/` 實體資料庫。
 - **未擴大範圍**：未實作 Trust Badges 輸出、RAG Prompt 邊界、`00_通用` fallback 或主題分類。
 - **無實體 Manifest 提交**：測試完全於 `tempfile.TemporaryDirectory()` 中進行，未在專案 `docs/` 留下實體 `manifest.json`。
@@ -95,28 +93,26 @@ $ pytest -q test_rag_engine.py test_app_ui_wording.py
 - **全套測試**：
 ```shell
 $ pytest -q
-.............................                                            [100%]
-29 passed in 0.52s
+..............................                                           [100%]
+30 passed in 0.54s
 ```
 
 ### 2. `git diff --check` 執行結果
-離退碼為 0，無任何格式或空白錯誤。實際指令輸出包含 Git LF/CRLF 換行符號轉換提示訊息：
+離退碼為 0，無任何格式與空白錯誤。實際指令輸出包含 Git LF/CRLF 換行符號轉換提示訊息：
 
 ```shell
 $ git diff --check
-warning: in the working copy of 'app.py', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'test_app_ui_wording.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.codex-orchestration/reports/report-agy-0011.md', LF will be replaced by CRLF the next time Git touches it
 ```
 
 ### 3. `git status --short` 實際執行結果
-僅顯示本次補正修改之 2 份程式與測試檔案：
+僅顯示本次報告補正檔之變更：
 
 ```shell
 $ git status --short
- M app.py
- M test_app_ui_wording.py
+ M .codex-orchestration/reports/report-agy-0011.md
 ```
 
 ---
 
-*任務 0011 補正執行完畢，報告已寫入，停止執行，等待 Codex 審查。*
+*任務 0011 最終報告補正完成，報告已更新，停止執行，等待 Codex 最終驗收。*
