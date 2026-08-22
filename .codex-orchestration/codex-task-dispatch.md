@@ -1,7 +1,7 @@
 ---
 task_id: 0008
 title: 修正 Type B 範例中的未確認事實與處置敘述
-status: rework_required
+status: completed
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0008.md
 current_report: .codex-orchestration/reports/report-agy-0008.md
@@ -57,3 +57,7 @@ execution_allowed: true
 2. `git diff --check` 結果如實記錄：離退碼為 0、無格式或空白錯誤；若執行時仍輸出 CRLF 轉換提示，須明確標示為 Git 行尾轉換提示，不得寫成「無任何警告」或「輸出為空」。
 
 不得修改任何提示詞、程式或測試。完成後停止等待最終複審。
+
+## Codex 最終驗收
+
+任務 0008 已通過驗收：11 份 Type B 範例已完成事實邊界審視與必要補正；報告交付資訊正確，`git diff --check` 離退碼為 0（僅有 CRLF 轉換提示），`pytest -q` 為 23 passed。

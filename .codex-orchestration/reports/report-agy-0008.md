@@ -1,4 +1,4 @@
-# 報告 agy-0005：修正 Type B 範例中的未確認事實與處置敘述（退回補正版）
+# 報告 agy-0008：修正 Type B 範例中的未確認事實與處置敘述（退回補正版）
 
 **執行任務 ID**：0008
 **執行步驟**：唯一步驟 — 修訂 11 份 Type B 提示詞「使用範例」，消除無來源事實捏造，改為條件式查證與客觀溝通（退回補正版）
@@ -84,9 +84,14 @@ $ pytest -q
 ```
 
 ### 2. `git diff --check` 執行結果
+離退碼為 0，無任何格式或空白錯誤。實際指令輸出包含 Git LF/CRLF 換行符號轉換提示訊息：
+
 ```shell
 $ git diff --check
-(離退碼: 0，無任何警告與空白錯誤，輸出為空)
+warning: in the working copy of '.codex-orchestration/reports/report-agy-0008.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'prompts/01_座位安排與班級經營.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'prompts/02_成績評量與學習表現.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'prompts/04_管教方式與獎懲制度.md', LF will be replaced by CRLF the next time Git touches it
 ```
 
 ### 3. `git status` 執行結果
@@ -121,4 +126,4 @@ Untracked files:
 
 ---
 
-*任務 0008 補正執行完畢，報告已寫入，停止執行，等待 Codex 審查。*
+*任務 0008 交付資訊更正完畢，報告已更新，停止執行，等待 Codex 最終複審。*
