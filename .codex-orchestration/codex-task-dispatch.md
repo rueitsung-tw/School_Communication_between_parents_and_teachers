@@ -1,7 +1,7 @@
 ---
 task_id: 0002
 title: 更新法令研究基礎與可追溯法源
-status: approved
+status: rework_required
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0002.md
 current_report: .codex-orchestration/reports/report-agy-0002.md
@@ -32,3 +32,13 @@ execution_allowed: true
 ## 前置條件
 
 任務 0001 已完成；權威法源與需修正的主張已記錄於 `.codex-orchestration/reports/report-agy-0001.md`。本任務只處理 `research_D_legal.md`，不可將法令文字改寫進提示詞、taxonomy 或 RAG 文件。
+
+## Codex 審查決定（2026-08-22）
+
+結論：**退回補正；僅可改寫 `research_D_legal.md` 與 `report-agy-0002.md`。**
+
+1. 個資法段落必須區分：公立學校通常屬公務機關，應依第 15、16 條評估；私立學校或其他非公務機關才依第 19、20 條評估。不可將第 19 條當作所有學校 LINE 群組情境的唯一條件。
+2. 「關鍵實務判例與案例分析」不可使用沒有案號、裁判書連結或官方裁判摘要支持的「法院多認定／可能判決」結論。請二擇一：補上可核對的司法院裁判來源；或改名為「情境風險分析」，且明確表明不是判例整理。
+3. 將「霸凌或性別事件均於 24 小時內完成法定通報」改成依各該法規與校內權責程序的條件式提醒，並於文內附正確一手法源；避免將不同事件類型與時點義務合併成單一絕對規則。
+
+補正後覆寫 `current_report`，並執行 `git diff --check`；完成後停止等待 Codex 複審。
