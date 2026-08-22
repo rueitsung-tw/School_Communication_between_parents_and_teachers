@@ -81,26 +81,43 @@ ollama list
 
 建議使用 Python 虛擬環境（Virtual Environment）進行套件安裝，可避免全域環境衝突與 PEP 668（`externally-managed-environment`）錯誤：
 
-```bash
-# (若在 Debian/Ubuntu 系統且尚未安裝 venv，請先執行)
-# sudo apt update && sudo apt install python3-venv python3-full
+#### 🪟 Windows 環境 (PowerShell / CMD)
 
-# 1. 建立虛擬環境
-python3 -m venv .venv
+```powershell
+# 1. 切換至專案目錄（確保 dir 能看到 requirements.txt）
+# 若解壓 ZIP 後有多層資料夾，請先執行 cd School_Communication_between_parents_and_teachers-main
 
-# 2. 啟用虛擬環境
-# Linux / macOS:
-source .venv/bin/activate
-# Windows (Git Bash):
-source .venv/Scripts/activate
-# Windows (PowerShell):
+# 2. 建立虛擬環境 (若電腦未安裝 Python 3，請先至 python.org 下載安裝)
+python -m venv .venv
+
+# 3. 啟用虛擬環境
+# PowerShell:
 .venv\Scripts\Activate.ps1
-# Windows (CMD):
+# CMD:
 .venv\Scripts\activate.bat
+# Git Bash:
+source .venv/Scripts/activate
 
-# 3. 安裝專案套件
+# 4. 安裝專案套件
 pip install -r requirements.txt
 ```
+
+#### 🐧 Linux / macOS 環境 (Ubuntu / Debian)
+
+```bash
+# 1. 若尚未安裝 venv 模組，請先執行
+sudo apt update && sudo apt install python3-venv python3-full
+
+# 2. 建立虛擬環境
+python3 -m venv .venv
+
+# 3. 啟用虛擬環境
+source .venv/bin/activate
+
+# 4. 安裝專案套件
+pip install -r requirements.txt
+```
+
 
 > 💡 **Windows PowerShell 初次啟用虛擬環境常見問題與疑難排解**：
 > 
