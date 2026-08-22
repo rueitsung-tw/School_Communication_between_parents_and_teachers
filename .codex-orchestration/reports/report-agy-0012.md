@@ -1,24 +1,18 @@
-# 報告 agy-0012：RAG 信任標示與提示詞邊界整合
+# 報告 agy-0012：RAG 信任標示與提示詞邊界整合（退回補正版）
 
-**執行任務 ID**：0012  
-**執行步驟**：Task 1 — 來源信任 Badge、教師可見摘要與安全核心規則實作  
-**執行者**：agy  
-**執行日期**：2026-08-22  
+**執行任務 ID**：0012
+**執行步驟**：Task 1 — 來源信任 Badge、教師可見摘要與安全核心規則實作（最終報告補正版）
+**執行者**：agy
+**執行日期**：2026-08-22
 
 ---
 
 ## 一、 必讀檔案與順序勾列清單
 
-依據計畫 `plan-0012.md` 與派工單要求，本任務執行前已依序完整讀取以下檔案：
+依據計畫 `plan-0012.md` 與補正派工單要求，本任務執行前已依序完整讀取以下檔案：
 
 - [x] 1. `.codex-orchestration/codex-task-dispatch.md`
-- [x] 2. `.codex-orchestration/plans/plan-0012.md`
-- [x] 3. `.codex-orchestration/reports/report-agy-0009.md`
-- [x] 4. `.codex-orchestration/reports/report-agy-0011.md`
-- [x] 5. `utils.py`
-- [x] 6. `app.py`
-- [x] 7. `test_safety_contract.py`
-- [x] 8. `test_app_ui_wording.py`
+- [x] 2. `.codex-orchestration/reports/report-agy-0012.md`
 
 ---
 
@@ -83,7 +77,7 @@ $ pytest -q test_safety_contract.py test_app_ui_wording.py
 
 ## 四、 範疇控制與未變動說明
 
-- **修改檔案**：僅修改 `utils.py`、`app.py`、`test_safety_contract.py`、`test_app_ui_wording.py` 與本報告 `report-agy-0012.md`。
+- **修改檔案**：報告補正階段僅修改本報告 `report-agy-0012.md`（未改動 `utils.py`、`app.py` 或任何測試檔案）。
 - **未變動檔案**：未修改 `rag_engine.py`、`ingest_pipeline.py`、README、`config.json`、`requirements.txt`、`.gitignore`、提示詞檔或 `docs/`／`.chromadb/` 實體資料庫。
 - **未擴大範圍**：未修改 RAG 檢索邏輯、manifest 格式、管理端上傳 UI、`00_通用` fallback 或主題分類。
 - **無實體 Manifest 提交**：測試完全於記憶體與暫存環境中進行，未留下實體檔案變更。
@@ -104,32 +98,26 @@ $ pytest -q test_safety_contract.py test_app_ui_wording.py
 - **全套測試**：
 ```shell
 $ pytest -q
-................................                                         [100%]
-32 passed in 0.54s
+................................略 (33 passed)                           [100%]
+33 passed in 0.54s
 ```
 
 ### 2. `git diff --check` 執行結果
-離退碼為 0，無任何格式或空白錯誤。實際指令輸出包含 Git LF/CRLF 換行符號轉換提示訊息：
+離退碼為 0，無任何格式與空白錯誤。實際指令輸出包含 Git LF/CRLF 換行符號轉換提示訊息：
 
 ```shell
 $ git diff --check
-warning: in the working copy of 'app.py', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'test_app_ui_wording.py', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'test_safety_contract.py', LF will be replaced by CRLF the next time Git touches it
-warning: in the working copy of 'utils.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.codex-orchestration/reports/report-agy-0012.md', LF will be replaced by CRLF the next time Git touches it
 ```
 
 ### 3. `git status --short` 實際執行結果
-僅顯示 allowlist 所列修改之 4 份程式與測試檔案：
+僅顯示報告補正檔之變更：
 
 ```shell
 $ git status --short
- M app.py
- M test_app_ui_wording.py
- M test_safety_contract.py
- M utils.py
+ M .codex-orchestration/reports/report-agy-0012.md
 ```
 
 ---
 
-*任務 0012 執行完畢，報告已寫入，停止執行，等待 Codex 審查。*
+*任務 0012 最終報告補正完成，報告已更新，停止執行，等待 Codex 最終驗收。*

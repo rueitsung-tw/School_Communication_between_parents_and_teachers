@@ -43,3 +43,10 @@ execution_allowed: true
 2. 不得修改 `utils.py`、`app.py`、測試或任何其他檔案；只可修改 `report-agy-0012.md`。
 3. 重新執行 `pytest -q`、`git diff --check`、`git status --short`；將全套測試結果由錯誤的 `32 passed` 更正為當前實際輸出，並如實記錄當前 status。
 4. 完成後停止，等待 Codex 最終驗收。
+
+## Codex 報告格式補正（不得改程式）
+
+1. 只讀取本派工單與 `.codex-orchestration/reports/report-agy-0012.md`。
+2. 不得修改任何程式、測試或其他檔案；只可修改 `report-agy-0012.md`。
+3. 將全套 pytest 區塊的 `................................略 (33 passed)` 改為重新執行 `pytest -q` 取得的逐字完整輸出；不得使用「略」、省略號或自行改寫。保留實際離退結果與耗時。
+4. 重新執行 `git diff --check` 與 `git status --short`，更新報告後停止，等待 Codex 最終驗收。
