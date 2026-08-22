@@ -122,6 +122,32 @@ def test_indexed_and_retrieved_chunks_preserve_or_default_source_metadata(monkey
         assert result[0]["verified_status"] == "unverified"
         assert result[0]["source_url"] == ""
 
+def test_manifest_non_dict_root_safely_degrades_and_rejects_overwrite():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        docs_dir = os.path.join(tmpdir, "docs")
+        os.makedirs(docs_dir)
+        manifest_file = os.path.join(docs_dir, "manifest.json")
+        with open(manifest_file, "w", encoding="utf-8") as f:
+            f.write("[]")
+
+        engine = RAGEngine("http://unused", docs_dir=docs_dir)
+        source = os.path.join(docs_dir, "file.md")
+
+        assert engine._get_source_metadata(source) == {
+            "trust_level": "external_unverified",
+            "author_type": "web_crawl",
+            "verified_status": "unverified",
+            "source_url": "",
+        }
+
+        assert engine.register_source_metadata(
+            source, "official", "school_admin", "verified", ""
+        ) is False
+
+        with open(manifest_file, encoding="utf-8") as f:
+            content = f.read()
+        assert content == "[]"
+
 if __name__ == "__main__":
     test_normalize_path()
     test_import_fitz()
@@ -130,3 +156,4 @@ if __name__ == "__main__":
     test_register_source_metadata_rejects_verified_non_official()
     test_unregistered_source_uses_safe_default_metadata()
     test_indexed_and_retrieved_chunks_preserve_or_default_source_metadata()
+    test_manifest_non_dict_root_safely_degrades_and_rejects_overwrite()

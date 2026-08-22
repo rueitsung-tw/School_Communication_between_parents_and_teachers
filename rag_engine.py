@@ -516,9 +516,11 @@ class RAGEngine:
         try:
             with open(self._manifest_path(), encoding="utf-8") as f:
                 manifest = json.load(f)
-            stored = manifest.get(normalize_path(source_fpath), {})
         except (OSError, json.JSONDecodeError):
             return metadata
+        if not isinstance(manifest, dict):
+            return metadata
+        stored = manifest.get(normalize_path(source_fpath), {})
         if not isinstance(stored, dict):
             return metadata
         trust_level = stored.get("trust_level", metadata["trust_level"])
@@ -562,7 +564,11 @@ class RAGEngine:
                 with open(mpath, "r", encoding="utf-8") as f:
                     manifest = json.load(f)
             except Exception:
-                manifest = {}
+                print(f"[RAG] ❌ manifest.json 讀取失敗，拒絕覆寫")
+                return False
+            if not isinstance(manifest, dict):
+                print(f"[RAG] ❌ manifest.json 根節點非 dict 物件，拒絕覆寫")
+                return False
 
         manifest[normalize_path(source_fpath)] = {
             "trust_level": trust_level,

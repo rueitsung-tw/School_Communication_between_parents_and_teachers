@@ -1,7 +1,7 @@
 ---
 task_id: 0010
 title: RAG 來源信任核心：manifest 與 Chroma metadata
-status: rework_required
+status: completed
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0010.md
 current_report: .codex-orchestration/reports/report-agy-0010.md
@@ -53,3 +53,9 @@ execution_allowed: true
 3. 修正報告第四節誤植的 `report-agy-010.md` 為正確檔名 `report-agy-0010.md`，並新增此次 RED/GREEN、專屬與全套測試、`git diff --check` 與 `git status --short` 的實際結果。
 4. 允許修改僅限：`rag_engine.py`、`test_rag_engine.py`、`.codex-orchestration/reports/report-agy-0010.md`。不得修改 `.gitignore`、任何其他檔案，亦不得建立專案 `docs/manifest.json`。
 5. 完成後停止，等待 Codex 再審。
+
+## Codex 最終複審結果
+
+- 驗收通過：合法 JSON 但非 `dict` 根節點會在讀取時安全降級；登記時拒絕覆寫並回傳 `False`。
+- 驗證：`pytest -q test_rag_engine.py` 為 **8 passed**；`pytest -q` 為 **28 passed**；`git diff --check` 離退碼為 **0**。
+- 0010 已完成。下一任務才可處理 UI 來源登記、信任標章與通用 fallback；不得回頭擴張本任務範圍。
