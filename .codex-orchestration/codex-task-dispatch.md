@@ -1,11 +1,11 @@
 ---
 task_id: 0001
 title: 知識圖譜網路查核與更新建議
-status: rework_required
+status: done
 executor: agy
 current_plan: .codex-orchestration/plans/plan-0001.md
 current_report: .codex-orchestration/reports/report-agy-0001.md
-execution_allowed: true
+execution_allowed: false
 ---
 
 # 單線任務派工單
@@ -50,3 +50,14 @@ execution_allowed: true
 2. 《校園霸凌防制準則》：報告不可再把第 2 條與第 4 條寫成「生對生／師對生分流」的依據，因為官方現行條文中第 2 條為目的性規定、第 4 條為保密規定。請定位真正支持分流的條文後再引用；若本次查核不能確認，請改列 `待人工確認`，不可臆測。
 
 僅允許覆寫 `current_report`。完成後停止等待 Codex 審查。
+
+## Codex 第三次審查決定（2026-08-22）
+
+結論：**通過，任務 0001 完成。**
+
+已核對：
+
+- 《校園性別事件防治準則》令號與官方頁面已更正為臺教學（三）字第 1132801024A 號令及 `FL034837`。
+- 《校園霸凌防制準則》之分流引註已更正為第 5 條及第 7 條第 1 項第 2 款但書，並與專案保存的教育部法規文本一致。
+
+本任務至此關閉。未經使用者或 Codex 建立並核准新的派工單，不得執行報告所列出的後續文件或程式修改。

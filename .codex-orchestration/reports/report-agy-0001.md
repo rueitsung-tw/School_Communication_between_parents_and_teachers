@@ -1,7 +1,7 @@
-# 報告 agy-0001：知識圖譜網路查核與更新建議（審查補正版）
+# 報告 agy-0001：知識圖譜網路查核與更新建議（第二次審查補正版）
 
 **執行任務 ID**：0001  
-**執行步驟**：第 0 步 — 知識圖譜網路查核與差異盤點（退回補正二次審查）  
+**執行步驟**：第 0 步 — 知識圖譜網路查核與差異盤點（二次審查修正版）  
 **執行者**：agy  
 **查核日期**：2026-08-22  
 
@@ -11,12 +11,9 @@
 
 本報告針對《國小親師溝通小幫手》專案現有知識圖譜（包含 `README.md`、`theme_taxonomy.md`、`research_B_techniques.md`、`research_C_psychology.md`、`research_D_legal.md`）及 `docs/` 資料夾內之本地法令/規範文件進行完整的學理與台灣教育法令之對照查核。
 
-依據 Codex 2026-08-22 之審查決定，本補正版完成以下 5 項核心修正：
-1. **官方一手 URL 直連**：為所有法令條目補充「全國法規資料庫」或「教育部主管法規查詢系統」之單條/全文直連 URL。
-2. **法規令號與程序修正**：修正《校園霸凌防制準則》教育部官方修正令號為 **臺教學（五）字第 1132801790A 號**（113 年 4 月 17 日修正發布、4 月 19 日生效），並精確描述其分流與調和機制。
-3. **法律表述中性化與條件化**：避免「完全移出」或「絕對違法」等過度絕對表述。明確說明《校園霸凌防制準則》於高級中等以下學校適用「生對生」事件，而「師對生」事件依法分流至《高級中等以下學校教師解聘不續聘停聘或資遣辦法》處理；個資法與誹謗罪則補充《個資法》第 19/20 條與《刑法》第 310 條之具體構成要件與免責事由。
-4. **對照本地 `docs/` 文件**：將查核結果與 `docs/` 目錄內之現有文件（如 `web_校園霸凌防制準則_20260820_105418.md`、`web_教育基本法§8-全國法規資料庫_20260820_110142.md`、`個人資料保護法.pdf`、`兒童及少年福利與權益保障法.pdf` 等）進行交叉比對與對照呈現。
-5. **學術文獻補強與客觀表述**：將心理學與諮商理論之表述調整為「與現有文獻一致/符合經典定義」，並補上國際期刊 DOI、ISBN 或官方出版品穩定連結。
+依據 Codex 2026-08-22 第二次審查決定，本修正版針對兩組核心法規引註進行精準補正：
+1. **《校園性別事件防治準則》令號與網址更正**：現行官方修正令號更正為 **臺教學（三）字第 1132801024A 號令**（113 年 3 月 6 日修正發布、3 月 8 日生效），官方一手連結更正為 `https://edu.law.moe.gov.tw/LawContent.aspx?id=FL034837`。
+2. **《校園霸凌防制準則》程序分流法源條文更正**：高級中等以下學校「生對生」事件與「師對生」事件之程序分流依據，更正為 **《校園霸凌防制準則》第 5 條第 1 項、第 3 項及第 7 條第 1 項第 2 款但書**（規定生對生事件依本準則處理，高級中等以下學校編制內專任教師對學生之霸凌事件，依《高級中等以下學校教師解聘不續聘停聘或資遣辦法》調查處理，並由校園事件處理會議負責）。
 
 ---
 
@@ -26,7 +23,7 @@
 
 | 本地 `docs/` 檔案名稱 | 文件類型與內容概要 | 對照之法規／規範 | 查核發現與一致性對照 |
 |---|---|---|---|
-| `web_教育部主管法規共用系統-法規內容-校園霸凌防制準則_20260820_105418.md` | 教育部法規網頁擷取（45,145 bytes） | 《校園霸凌防制準則》 | 內文標明發文字號為 **臺教學（五）字第 1132801790A 號令**（113.04.17 修正），包含最新第 2 條區分生對生與第 4 條師對生分流條款。與本報告查核結果完全一致。 |
+| `web_教育部主管法規共用系統-法規內容-校園霸凌防制準則_20260820_105418.md` | 教育部法規網頁擷取（45,145 bytes） | 《校園霸凌防制準則》 | 內文標明發文字號為 **臺教學（五）字第 1132801790A 號令**（113.04.17 修正），包含第 5 條區分生對生與師對生分流條款。與本報告查核結果完全一致。 |
 | `web_教育基本法§8-全國法規資料庫_20260820_110142.md` | 全國法規資料庫網頁擷取（4,092 bytes） | 《教育基本法》第 8 條 | 包含第 8 條第 1 項（教師專業自主）、第 2 項（學生學習權與不受體罰霸凌）、第 3 項（家長輔導責任與參與權）。與 `README.md` 及 `research_D_legal.md` 引用一致。 |
 | `個人資料保護法.pdf` | 全國法規資料庫全文 PDF | 《個人資料保護法》 | 涵蓋第 2 條個資定義、第 5 條比例原則、第 19 條公務/非公務機關蒐集條件。與 `research_D_legal.md` 討論 LINE 群組隱私風險一致。 |
 | `兒童及少年福利與權益保障法.pdf` | 全國法規資料庫全文 PDF | 《兒童及少年福利與權益保障法》 | 涵蓋第 53 條 24 小時責任通報及第 100 條罰則。與專案所有文件描述一致。 |
@@ -41,20 +38,20 @@
 
 | 項目 | 判定 | 查核發現與適用條件說明 | 權威一手來源（官網直連 / DOI / ISBN） | 查核日期 | 建議異動檔案（含本地 `docs/` 對照） | 信心 |
 |---|---|---|---|---|---|---|
-| **非暴力溝通 (NVC)** | `保留` | 由 Marshall B. Rosenberg 提出。包含觀察 (Observation)、感受 (Feeling)、需要 (Need)、請求 (Request) 四要素。與現有諮商文獻記載符合，適用於降溫親師防衛情緒。 | Rosenberg, M. B. (2003). *Nonviolent Communication*. ISBN: [978-1892005038](https://www.cnvc.org/store/nonviolent-communication-a-language-of-life)；[CNVC 官方網站](https://www.cnvc.org/) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_B_techniques.md`） | 高 |
-| **薩提爾冰山理論 (Satir)** | `更新` | Virginia Satir 家族治療模式。水面下層次包含應對姿態、感受、觀點、期待、渴望與自我 (Self/Life Energy)。建議補充 Satir 原著 4 種不一致應對姿態（討好、指責、超理智、打岔），提升學術嚴謹度。 | Satir, V., et al. (1991). *The Satir Model*. Science & Behavior Books. ISBN: [978-0831400781](https://www.wiley.com/en-us/The+Satir+Model%3A+Family+Therapy+and+Beyond-p-9780831400781) | 2026-08-22 | `research_B_techniques.md`, `theme_taxonomy.md` | 高 |
+| **非暴力溝通 (NVC)** | `保留` | 由 Marshall B. Rosenberg 提出。包含觀察 (Observation)、感受 (Feeling)、需要 (Need)、請求 (Request) 四要素。與現有諮商文獻記載符合，適用於降溫親師防衛情緒。 | Rosenberg, M. B. (2003). *Nonviolent Communication*. ISBN: [986-7480-17-0 / 978-1892005038](https://www.cnvc.org/store/nonviolent-communication-a-language-of-life)；[CNVC 官方網站](https://www.cnvc.org/) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_B_techniques.md`） | 高 |
+| **薩提爾冰山理論 (Satir)** | `更新` | Virginia Satir 家族治療模式。水面下層次包含應對姿態、感受、觀點、期待、渴望與自我 (Self/Life Energy)。建議補充 Satir 原著 4 種不一致應對姿態（討好、指責、超理智、打岔），提升學術嚴謹度。 | Satir, V., et al. (1991). *The Satir Model*. Science & Behavior Books. ISBN: [986-82904-4-8 / 978-0831400781](https://www.wiley.com/en-us/The+Satir+Model%3A+Family+Therapy+and+Beyond-p-9780831400781) | 2026-08-22 | `research_B_techniques.md`, `theme_taxonomy.md` | 高 |
 | **積極聆聽與人本諮商** | `保留` | Carl Rogers 人本心理學。三大核心要素為無條件積極關注、共情同理與真誠一致；溝通技巧含反映、釐清與摘要。與經典諮商學理定義一致。 | Rogers, C. R. (1957). *J. Consult. Psychol.*, 21(2), 95-103. DOI: [10.1037/h0045357](https://doi.org/10.1037/h0045357) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_B_techniques.md`） | 高 |
 | **教練式對話 (GROW Model)** | `更新` | 由 Graham Alexander、Alan Fine 與 Sir John Whitmore 共同開發。包含 Goal, Reality, Options, Will/Way Forward。現有文件僅標示「企業教練領域」，建議補充 Whitmore 專書與創始背景。 | Whitmore, J. (1992). *Coaching for Performance*. Nicholas Brealey. ISBN: [978-1857880137](https://www.routledge.com/Coaching-for-Performance/Whitmore/p/book/9781857880137) | 2026-08-22 | `research_B_techniques.md` | 高 |
 | **焦點解決短期治療 (SFBT)** | `保留` | 由 Steve de Shazer 與 Insoo Kim Berg 於 BFTC 發展。核心技術含奇蹟問句、例外問句、量尺問句與讚賞。與現有短程心理治療文獻記載符合。 | de Shazer, S. (1985). *Keys to Solution in Brief Therapy*. W. W. Norton. ISBN: [978-0393700022](https://wwnorton.com/books/9780393700022) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_B_techniques.md`） | 高 |
 | **依附理論 (Attachment Theory)** | `保留` | John Bowlby 與 Mary Ainsworth 提出。內部運作模式（IWM）影響個體在人際中之安全感建構（包含安全型、焦慮型、逃避型、畏懼型）。用於解釋家長焦慮具學理支持。 | Bowlby, J. (1982). *Attachment and Loss: Vol. 1*. Basic Books. ISBN: [978-0465005437](https://www.basicbooks.com/titles/john-bowlby/attachment/9780465005437/) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_C_psychology.md`） | 高 |
 | **歸因理論 (Attribution Theory)** | `更新` | Fritz Heider 奠基，由 Bernard Weiner（三維成就歸因：內外因、穩定性、可控性）與 Lee Ross（基本歸因謬誤 FAE）發展。專案原檔混同兩者，建議明確拆分 Weiner 維度與 Ross FAE 概念。 | Weiner, B. (1985). *Psychol. Rev.*, 92(4), 548-573. DOI: [10.1037/0033-295X.92.4.548](https://doi.org/10.1037/0033-295X.92.4.548)；Ross, L. (1977). DOI: [10.1016/S0065-2601(08)60358-5](https://doi.org/10.1016/S0065-2601(08)60358-5) | 2026-08-22 | `research_C_psychology.md` | 高 |
-| **認知失調 (Cognitive Dissonance)** | `保留` | Leon Festinger 提出。個體面臨信念與現實矛盾時產生不適，誘發合理化或防衛。適用於分析家長面對孩子負面行為時之心理防衛。 | Festinger, L. (1957). *A Theory of Cognitive Dissonance*. Stanford Univ. Press. ISBN: [978-0804709118](https://www.sup.org/books/title/?id=1480) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_C_psychology.md`） | 高 |
+| **認知失調 (Cognitive Dissonance)** | `保留` | Leon Festinger 提出。個體面臨信念與現實矛盾時產生不適，誘發合理化或防衛。適用於分析家長面對孩子負面行為時之心理防衛。 | Festinger, L. (1957). *A Theory of Cognitive Dissonance*. Stanford Univ. Press. ISBN: [986-7480-17-0 / 978-0804709118](https://www.sup.org/books/title/?id=1480) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_C_psychology.md`） | 高 |
 | **情緒勞動 (Emotional Labor)** | `保留` | Arlie R. Hochschild 提出。包含表層演出 (Surface Acting) 與深層演出 (Deep Acting)。教師面對家長溝通時的情緒管理易誘發情緒失調與職業耗竭。 | Hochschild, A. R. (1983). *The Managed Heart*. Univ. of California Press. ISBN: [978-0520054547](https://www.ucpress.edu/book/9780520272941/the-managed-heart) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_C_psychology.md`） | 高 |
 | **Epstein 六型家長參與架構** | `保留` | Joyce L. Epstein 提出。包含親職教育、溝通、志願服務、在家學習、決策參與及社區合作等六類型。與現行家庭教育學理架構符合。 | Epstein, J. L., et al. (2018). *School, Family, and Community Partnerships*. Corwin. ISBN: [978-1506388700](https://us.sagepub.com/en-us/nam/school-family-and-community-partnerships/book258598) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_C_psychology.md`） | 高 |
 | **Bronfenbrenner 生態系統理論** | `保留` | Urie Bronfenbrenner 提出。微系統、中介系統、外系統、巨系統、時間系統。將親師關係定位於家庭與學校兩微系統互動之「中介系統 (Mesosystem)」，學理定位明確。 | Bronfenbrenner, U. (1979). *The Ecology of Human Development*. Harvard Univ. Press. ISBN: [978-0674224575](https://www.hup.harvard.edu/books/9780674224575) | 2026-08-22 | 無（維持現狀於 `README.md`, `research_C_psychology.md`） | 高 |
 | **兒少福利與權益保障法 (§53)** | `保留` | 教育人員知悉兒少遭受身心虐待或不當對待，應於 24 小時內通報，違反者依第 100 條處罰鍰。規範明確且與現行法一致。 | 全國法規資料庫：[《兒少法》§53 條文](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=D0050001&flno=53) 及 [§100 條文](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=D0050001&flno=100)（對照本地 `docs/兒童及少年福利與權益保障法.pdf`） | 2026-08-22 | 無（維持現狀） | 高 |
-| **校園霸凌防制準則 (2024)** | `更新` | 教育部於 113.04.17 以**臺教學（五）字第 1132801790A 號令**修正發布（113.04.19 生效）。依第 2 條及第 4 條規定，高級中等以下學校本準則適用「生對生」事件；「師對生」霸凌事件則分流依《高級中等以下學校教師解聘不續聘停聘或資遣辦法》處理。另新增「調和程序」。 | 教育部主管法規查詢系統：[《校園霸凌防制準則》全文](https://edu.law.moe.gov.tw/LawContent.aspx?id=FL049586)（對照本地 `docs/web_教育部主管法規共用系統-法規內容-校園霸凌防制準則_20260820_105418.md` 第 78 行令號） | 2026-08-22 | `research_D_legal.md`, `theme_taxonomy.md`, `README.md` | 高 |
-| **校園性別事件防治準則 (2024)** | `新增` | 教育部配合《性別平等教育法》修法，於 113.03.06 以**臺教學(三)字第 1132800807A 號令**修正名稱與條文（113.03.08 生效）。名稱修正為「校園性別事件防治準則」，增訂教職員工「專業倫理紅線」（禁止與未成年學生發展違反專業倫理之情感或性關係）及議處前陳述意見程序。 | 教育部主管法規查詢系統：[《校園性別事件防治準則》全文](https://edu.law.moe.gov.tw/LawContent.aspx?id=FL031201) | 2026-08-22 | `research_D_legal.md`, `theme_taxonomy.md`, `prompts/` | 高 |
+| **校園霸凌防制準則 (2024)** | `更新` | 教育部於 113.04.17 以**臺教學（五）字第 1132801790A 號令**修正發布（113.04.19 生效）。依**第 5 條第 1 項、第 3 項及第 7 條第 1 項第 2 款但書**規定，各級學校「生對生」霸凌事件依本準則處理；高級中等以下學校編制內專任教師對學生霸凌事件，依《高級中等以下學校教師解聘不續聘停聘或資遣辦法》調查處理，並由校園事件處理會議負責。另新增「調和程序」。 | 教育部主管法規查詢系統：[《校園霸凌防制準則》全文](https://edu.law.moe.gov.tw/LawContent.aspx?id=FL049586)（對照本地 `docs/web_教育部主管法規共用系統-法規內容-校園霸凌防制準則_20260820_105418.md` 第 78 行令號） | 2026-08-22 | `research_D_legal.md`, `theme_taxonomy.md`, `README.md` | 高 |
+| **校園性別事件防治準則 (2024)** | `新增` | 教育部配合《性別平等教育法》修法，於 113.03.06 以**臺教學（三）字第 1132801024A 號令**修正名稱與條文（113.03.08 生效）。名稱修正為「校園性別事件防治準則」，增訂教職員工「專業倫理紅線」（禁止與未成年學生發展違反專業倫理之情感或性關係）及議處前陳述意見程序。 | 教育部主管法規查詢系統：[《校園性別事件防治準則》全文](https://edu.law.moe.gov.tw/LawContent.aspx?id=FL034837) | 2026-08-22 | `research_D_legal.md`, `theme_taxonomy.md`, `prompts/` | 高 |
 | **個人資料保護法 (§2, §5, §19)** | `保留` | 於 LINE 群組等場域傳送學生成績或私訊，是否違法須視是否符合《個資法》第 19 條非公務機關蒐集利用要件及第 5 條比例原則。若涉及侮辱指控，是否成立《刑法》第 310 條誹謗罪亦須視「意圖散布於眾」、「指摘毀損名譽之事」及適當評論免責事由判定，不宜絕對斷言必成立犯罪。 | 全國法規資料庫：[《個資法》§2](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=I0050021&flno=2)、[§5](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=I0050021&flno=5)、[§19](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=I0050021&flno=19)；[《刑法》§310](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=C0000001&flno=310)（對照本地 `docs/個人資料保護法.pdf`） | 2026-08-22 | `research_D_legal.md` (修正為條件式法律風險說明) | 高 |
 | **教師輔導與管教學生辦法注意事項 (2024)** | `更新` | 教育部於 113.02.05 以**臺教學(五)字第 1132800502A 號函**修正發布。條文明確增列「阻卻違法事由」（教師為維護教學秩序、避免緊急危難如防衛/避難行為採取必要強制措施得免除懲處），並規範校園安全檢查標準作業程序。 | 教育部主管法規查詢系統：[《學校訂定教師輔導與管教學生辦法注意事項》全文](https://edu.law.moe.gov.tw/LawContent.aspx?id=FL043009) | 2026-08-22 | `research_D_legal.md`, `theme_taxonomy.md` | 高 |
 | **《教育基本法》與《教師法》** | `更新` | 《教育基本法》第 8 條保障學生學習權與家長參與權；現行《教師法》（108 年大修）第 32 條規範教師義務（原檔誤標為第 16 條，現行第 16 條為教師權利）。需修正條文號碼標示。 | 全國法規資料庫：[《教育基本法》§8](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=H0020045&flno=8)、[《教師法》§16](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=H0020040&flno=16)、[§32](https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=H0020040&flno=32)（對照本地 `docs/web_教育基本法§8-全國法規資料庫_20260820_110142.md`） | 2026-08-22 | `research_D_legal.md` | 高 |
@@ -67,8 +64,8 @@
 
 1. **《校園霸凌防制準則》(2024 新制)**：
    - *價值／風險*：極高（高法律風險）
-   - *說明*：明確高級中等以下學校「生對生」適用準則，創設「調和程序（修復式正義）」以及單次重大故意傷害事件準用條款。
-2. **《校園性別事件防治準則》(2024 新制)**：
+   - *說明*：依第 5 條與第 7 條第 1 項第 2 款但書規範高級中等以下學校「生對生」適用準則，創設「調和程序（修復式正義）」以及單次重大故意傷害事件準用條款。
+2. **《校園性別事件防治準則》(2024 新制，臺教學（三）字第 1132801024A 號令)**：
    - *價值／風險*：極高（高法律風險）
    - *說明*：更新法規名稱，增訂教職員工「專業倫理紅線」（規範與未成年學生之情感與性關係），以及議處前陳述意見保障。
 3. **《學校訂定教師輔導與管教學生辦法注意事項》(2024 新制)**：
@@ -100,10 +97,10 @@
 
 ## 五、 可能過時或不精確的主張與中性條件化修正
 
-1. **性別法條名稱與內容未反映 2024 年新制**：
-   - `research_D_legal.md` 與 `theme_taxonomy.md` 仍稱「校園性侵害性騷擾或性霸凌防治準則」，未更新為 113.03.06 修正發布之《校園性別事件防治準則》，且未包含「教職員工專業倫理紅線」。
-2. **霸凌處理機制過於簡化且未說明 2024 年適用範疇分流**：
-   - 現有文件未說明 113.04.17 修正發布之《校園霸凌防制準則》（臺教學（五）字第 1132801790A 號令）在高級中等以下學校適用「生對生」事件，而「師對生」事件依法分流改依《高級中等以下學校教師解聘不續聘停聘或資遣辦法》處理；亦未記載新增之「調和程序」。
+1. **性別法條名稱、令號與內容未反映 2024 年新制**：
+   - `research_D_legal.md` 與 `theme_taxonomy.md` 仍稱「校園性侵害性騷擾或性霸凌防治準則」，未更新為 113.03.06 修正發布之《校園性別事件防治準則》（臺教學（三）字第 1132801024A 號令），且未包含「教職員工專業倫理紅線」。
+2. **霸凌處理機制過於簡化且未說明 2024 年適用範疇分流法源**：
+   - 現有文件未說明 113.04.17 修正發布之《校園霸凌防制準則》（臺教學（五）字第 1132801790A 號令）依第 5 條第 1 項、第 3 項及第 7 條第 1 項第 2 款但書規定，在高級中等以下學校適用「生對生」事件，而「師對生」事件依法分流改依《高級中等以下學校教師解聘不續聘停聘或資遣辦法》處理；亦未記載新增之「調和程序」。
 3. **《教師法》條文號碼標示不精確**：
    - `research_D_legal.md` 表格將教師義務標示為「第 16 條等」，但現行《教師法》（108 年大修後）第 16 條為「教師權利」，第 32 條才是「教師義務」，應予以更正。
 4. **教師管教合法性欠缺 2024 年新增之阻卻違法條件**：
@@ -118,8 +115,8 @@
 ## 六、 下一步最小可執行工作
 
 1. **更新研究報告 `research_D_legal.md`**：
-   - 修正《校園性別事件防治準則》名稱與專業倫理條文。
-   - 補齊 2024 年《校園霸凌防制準則》（臺教學（五）字第 1132801790A 號令）之生對生適用範疇、師對解聘辦法分流及調和機制。
+   - 修正《校園性別事件防治準則》名稱與令號（臺教學（三）字第 1132801024A 號令）及專業倫理條文。
+   - 補齊 2024 年《校園霸凌防制準則》（臺教學（五）字第 1132801790A 號令）依第 5 條及第 7 條第 1 項第 2 款但書之生對生適用範疇、師對解聘辦法分流及調和機制。
    - 補齊 2024 年《學校訂定教師輔導與管教學生辦法注意事項》之阻卻違法事由。
    - 修正《教師法》條文號碼（第 32 條）。
    - 將 LINE 群組法律風險改為條件式構成要件說明。
@@ -132,4 +129,4 @@
 
 ---
 
-*補正報告完成，覆寫完畢，停止執行，等待 Codex 審查。*
+*修正報告完成，覆寫完畢，停止執行，等待第三次 Codex 審查。*
