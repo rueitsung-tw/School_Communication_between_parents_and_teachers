@@ -7,6 +7,11 @@ def test_normalize_text_for_llm_unifies_newlines_and_unicode():
     assert ingest_pipeline.normalize_text_for_llm(text) == "A\nB\né"
 
 
+def test_stage1_output_budget_and_reasoning_are_configured_for_json():
+    assert ingest_pipeline.MAX_STAGE1_OUTPUT_TOKENS == 2000
+    assert "不要輸出推理過程" in ingest_pipeline.STAGE1_SYSTEM_PROMPT
+
+
 def test_truncate_for_ingest_prefers_sentence_boundary():
     text = "甲" * 3200 + "。" + "乙" * 1200
 

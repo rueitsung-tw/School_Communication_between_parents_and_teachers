@@ -35,7 +35,7 @@ if sys.platform == "win32":
 
 SUMMARIES_DIR_NAME = "summaries"   # 在 docs/ 下的子目錄名稱
 MAX_TEXT_FOR_INGEST = 4_000        # 為 Stage 1 的 JSON 回覆保留 context window 空間
-MAX_STAGE1_OUTPUT_TOKENS = 1_200   # 避免輸入截斷後仍因輸出預留不足而被拒絕
+MAX_STAGE1_OUTPUT_TOKENS = 2_000   # 關閉 reasoning 後，保留足夠空間輸出完整 JSON
 
 # ── 文字清洗 ──────────────────────────────────────────────────────────────────
 
@@ -76,7 +76,7 @@ def truncate_for_ingest(text: str, limit: int) -> str:
 
 STAGE1_SYSTEM_PROMPT = """\
 你是國小教育領域的知識整理專家，專精台灣教育法令與親師溝通。
-請仔細閱讀以下文件內容，以「純 JSON」格式輸出分析結果，不要有任何前後說明文字。
+請仔細閱讀以下文件內容，不要輸出推理過程，直接以「純 JSON」格式輸出分析結果，不要有任何前後說明文字。
 輸出格式：
 {
   "main_topics": ["主題1", "主題2"],
@@ -157,6 +157,7 @@ def _call_ollama(
         ],
         "temperature": temperature,
         "max_tokens": MAX_STAGE1_OUTPUT_TOKENS,
+        "reasoning_format": "none",
         "stream": False
     }).encode("utf-8")
 
