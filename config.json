@@ -2,9 +2,9 @@
   "provider": "ollama",
   "ollama_url": "http://172.20.199.153:8081",
   "api_key": "ollama",
-  "model_name": "/home/ruei/ai/models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
+  "model_name": "gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf",
   "embedding_url": "http://172.20.199.153:8082",
-  "embedding_model": "/home/ruei/ai/models/nomic-embed-text-v1.5.Q8_0.gguf",
+  "embedding_model": "nomic-embed-text-v1.5.Q8_0.gguf",
   "two_step_ingest": true,
   "ingest_model": "",
   "admin_password": "12345678"
