@@ -95,10 +95,25 @@ source .venv/bin/activate
 source .venv/Scripts/activate
 # Windows (PowerShell):
 .venv\Scripts\Activate.ps1
+# Windows (CMD):
+.venv\Scripts\activate.bat
 
 # 3. 安裝專案套件
 pip install -r requirements.txt
 ```
+
+> 💡 **Windows PowerShell 初次啟用虛擬環境常見問題與疑難排解**：
+> 
+> * **問題 1：`無法辨識 'source' 詞彙`**
+>   * **原因**：`source` 為 Linux / Bash 專用指令。PowerShell 環境請直接輸入 `.venv\Scripts\Activate.ps1`，不可前綴 `source`。
+> * **問題 2：`因為這個系統上已停用指令碼執行 (UnauthorizedAccess)`**
+>   * **原因**：全新 Windows 系統預設停用 `.ps1` 腳本執行權限。
+>   * **解法**：請在 PowerShell 中執行以下指令開通權限（出現提示時輸入 `Y` 確定）：
+>     ```powershell
+>     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+>     ```
+>     解鎖後即可正常執行 `.venv\Scripts\Activate.ps1`。
+
 
 主要相依套件：
 
